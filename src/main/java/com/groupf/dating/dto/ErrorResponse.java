@@ -12,9 +12,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class ErrorResponse {
-    private int status;
-    private String error;
-    private String message;
-    private String path;
+    private int code;           // Custom error code
+    private int status;         // HTTP status code
+    private String error;       // Error type
+    private String message;     // Error message
+    private String path;        // Request path
     private LocalDateTime timestamp;
+    private Boolean retryable;  // Whether the error is retryable (optional)
 }

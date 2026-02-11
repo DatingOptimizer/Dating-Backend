@@ -16,12 +16,56 @@ import java.time.LocalDateTime;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /**
+     * Handle Claude API exceptions
+     */
+    @ExceptionHandler(ClaudeApiException.class)
+    public ResponseEntity<ErrorResponse> handleClaudeApiException(
+            ClaudeApiException ex, WebRequest request) {
+        ErrorCode errorCode = ex.getErrorCode();
+        log.error("Claude API error [{}]: {}", errorCode.getCode(), ex.getMessage(), ex);
+
+        ErrorResponse error = ErrorResponse.builder()
+                .code(errorCode.getCode())
+                .status(errorCode.getHttpStatus().value())
+                .error(errorCode.name())
+                .message(ex.getMessage())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .timestamp(LocalDateTime.now())
+                .retryable(ex.isRetryable())
+                .build();
+
+        return ResponseEntity.status(errorCode.getHttpStatus()).body(error);
+    }
+
+    /**
+     * Handle business exceptions
+     */
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessException(
+            BusinessException ex, WebRequest request) {
+        ErrorCode errorCode = ex.getErrorCode();
+        log.warn("Business error [{}]: {}", errorCode.getCode(), ex.getMessage());
+
+        ErrorResponse error = ErrorResponse.builder()
+                .code(errorCode.getCode())
+                .status(errorCode.getHttpStatus().value())
+                .error(errorCode.name())
+                .message(ex.getMessage())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.status(errorCode.getHttpStatus()).body(error);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
             IllegalArgumentException ex, WebRequest request) {
         log.warn("Validation error: {}", ex.getMessage());
 
         ErrorResponse error = ErrorResponse.builder()
+                .code(ErrorCode.BAD_REQUEST.getCode())
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error("Bad Request")
                 .message(ex.getMessage())
@@ -43,6 +87,7 @@ public class GlobalExceptionHandler {
         log.warn("Validation error: {}", message);
 
         ErrorResponse error = ErrorResponse.builder()
+                .code(ErrorCode.VALIDATION_ERROR.getCode())
                 .status(HttpStatus.BAD_REQUEST.value())
                 .error("Validation Error")
                 .message(message)
@@ -59,6 +104,7 @@ public class GlobalExceptionHandler {
         log.warn("File upload size exceeded");
 
         ErrorResponse error = ErrorResponse.builder()
+                .code(ErrorCode.FILE_UPLOAD_SIZE_EXCEEDED.getCode())
                 .status(HttpStatus.PAYLOAD_TOO_LARGE.value())
                 .error("File Too Large")
                 .message("Maximum upload size exceeded")
@@ -75,6 +121,7 @@ public class GlobalExceptionHandler {
         log.error("Runtime error", ex);
 
         ErrorResponse error = ErrorResponse.builder()
+                .code(ErrorCode.SYSTEM_ERROR.getCode())
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error("Internal Server Error")
                 .message(ex.getMessage() != null ? ex.getMessage() : "An unexpected error occurred")
@@ -91,6 +138,7 @@ public class GlobalExceptionHandler {
         log.error("Unexpected error", ex);
 
         ErrorResponse error = ErrorResponse.builder()
+                .code(ErrorCode.SYSTEM_ERROR.getCode())
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .error("Internal Server Error")
                 .message("An unexpected error occurred")
