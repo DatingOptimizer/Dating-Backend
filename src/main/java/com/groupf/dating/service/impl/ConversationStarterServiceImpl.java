@@ -3,6 +3,8 @@ package com.groupf.dating.service.impl;
 import com.groupf.dating.common.ToneType;
 import com.groupf.dating.dto.ConversationStarterRequest;
 import com.groupf.dating.dto.ConversationStarterResponse;
+import com.groupf.dating.model.ProfileOptimizationRequest;
+import com.groupf.dating.repository.ProfileRequestRepository;
 import com.groupf.dating.service.ClaudeApiService;
 import com.groupf.dating.service.ConversationStarterService;
 import com.groupf.dating.util.PromptBuilder;
@@ -21,6 +23,7 @@ import java.util.regex.Pattern;
 public class ConversationStarterServiceImpl implements ConversationStarterService {
 
     private final ClaudeApiService claudeApiService;
+    private final ProfileRequestRepository profileRequestRepository;
 
     @Override
     public ConversationStarterResponse generateStarters(ConversationStarterRequest request) {
@@ -34,7 +37,24 @@ public class ConversationStarterServiceImpl implements ConversationStarterServic
         String response = claudeApiService.callClaudeApi(systemPrompt, userPrompt);
         ConversationStarterResponse result = parseConversationStarters(response, request.getBio(), tone.getValue());
         log.info("Successfully generated {} conversation starters", result.getStarters().size());
+
+        saveToDatabase(request.getBio(), tone.getValue(), result.getStarters());
+
         return result;
+    }
+
+    private void saveToDatabase(String bio, String tone, java.util.List<String> starters) {
+        try {
+            ProfileOptimizationRequest entity = new ProfileOptimizationRequest();
+            entity.setOriginalBio(bio);
+            entity.setTonePreference(tone);
+            entity.setConversationStarters(starters);
+            entity.setCreatedAt(java.time.LocalDateTime.now());
+            profileRequestRepository.save(entity);
+            log.info("Conversation starter result saved to database");
+        } catch (Exception e) {
+            log.error("Failed to save conversation starter result to database", e);
+        }
     }
 
     /**
