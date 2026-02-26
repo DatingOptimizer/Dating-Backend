@@ -151,7 +151,7 @@ public class ClaudeApiServiceImpl implements ClaudeApiService {
     private String extractTextResponse(JsonNode response) {
         try {
             JsonNode content = response.get("content");
-            if (content != null && content.isArray() && content.size() > 0) {
+            if (content != null && content.isArray() && !content.isEmpty()) {
                 JsonNode firstContent = content.get(0);
                 if (firstContent.has("text")) {
                     return firstContent.get("text").asText();

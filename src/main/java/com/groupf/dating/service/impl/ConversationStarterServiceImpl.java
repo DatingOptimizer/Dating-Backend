@@ -74,7 +74,7 @@ public class ConversationStarterServiceImpl implements ConversationStarterServic
                 line = line.replaceAll("^[\"']|[\"']$", ""); // Remove quotes
 
                 // Skip empty lines and headers
-                if (!line.isEmpty() && line.length() > 10
+                if (line.length() > 10
                         && !line.toLowerCase().contains("conversation starter")
                         && !line.toLowerCase().contains("opening message")
                         && !line.toLowerCase().contains("here are")

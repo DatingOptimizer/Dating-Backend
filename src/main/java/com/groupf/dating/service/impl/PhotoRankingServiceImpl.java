@@ -125,7 +125,7 @@ public class PhotoRankingServiceImpl implements PhotoRankingService {
         Pattern pattern = Pattern.compile(
                 "(?:Photo\\s*\\d+|\\d+[.)])\\s*(?:Rank|#)?:?\\s*(\\d+).*?" +
                 "(?:Score|Rating)\\s*:?\\s*(\\d+).*?" +
-                "(?:Reasoning|Reason|Why)\\s*:?\\s*(.+?)(?=(?:\\n\\s*(?:Photo|\\d+[.)])|$))",
+                        "(?:Reasoning|Reason|Why)\\s*:?\\s*(.+?)(?=\\n\\s*(?:Photo|\\d+[.)])|$)",
                 Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
         Matcher matcher = pattern.matcher(response);

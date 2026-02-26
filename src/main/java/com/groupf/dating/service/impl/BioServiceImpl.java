@@ -68,7 +68,7 @@ public class BioServiceImpl implements BioService {
             for (String line : lines) {
                 line = line.trim();
                 // Skip empty lines and section headers
-                if (!line.isEmpty() && line.length() > 20 && line.length() <= 500
+                if (line.length() > 20 && line.length() <= 500
                         && !line.toLowerCase().contains("version")
                         && !line.toLowerCase().contains("option")) {
                     rewrittenBios.add(line);

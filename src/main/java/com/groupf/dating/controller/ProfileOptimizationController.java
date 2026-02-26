@@ -25,18 +25,15 @@ public class ProfileOptimizationController {
     /**
      * Rewrites a bio into multiple versions
      * POST /api/profile/rewrite-bio
-     *
      * Request body example:
      * {
      *   "bio": "I love hiking, traveling, and coffee. Software engineer by day.",
      *   "tone": "casual"  // casual, professional, bold
      * }
-     *
      * Get test data from:
      * - GET /api/test/bio-rewrite-casual
      * - GET /api/test/bio-rewrite-professional
      * - GET /api/test/bio-rewrite-bold
-     *
      * Response example:
      * {
      *   "originalBio": "Original bio text",
@@ -61,12 +58,10 @@ public class ProfileOptimizationController {
      * Ranks photos for dating profile
      * POST /api/profile/rank-photos
      * Content-Type: multipart/form-data
-     *
      * Testing instructions:
      * 1. Select "Multipart" type in Fast Request
      * 2. Add parameter named "photos", select type "File[]"
      * 3. Upload 1-5 photos (JPEG/PNG format, each <10MB)
-     *
      * Response example:
      * {
      *   "rankedPhotos": [
@@ -96,18 +91,15 @@ public class ProfileOptimizationController {
     /**
      * Generates conversation starters based on a bio
      * POST /api/profile/generate-openers
-     *
      * Request body example:
      * {
      *   "bio": "Data scientist who loves hiking, guitar, and Italian food.",
      *   "tone": "polite"  // bold, polite, concise
      * }
-     *
      * Get test data from:
      * - GET /api/test/conversation-starters-polite
      * - GET /api/test/conversation-starters-bold
      * - GET /api/test/conversation-starters-concise
-     *
      * Response example:
      * {
      *   "bio": "Original bio text",
