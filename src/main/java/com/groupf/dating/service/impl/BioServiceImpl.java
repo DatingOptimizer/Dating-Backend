@@ -3,6 +3,8 @@ package com.groupf.dating.service.impl;
 import com.groupf.dating.common.ToneType;
 import com.groupf.dating.dto.BioRewriteRequest;
 import com.groupf.dating.dto.BioRewriteResponse;
+import com.groupf.dating.model.ProfileOptimizationRequest;
+import com.groupf.dating.repository.ProfileRequestRepository;
 import com.groupf.dating.service.BioService;
 import com.groupf.dating.service.ClaudeApiService;
 import com.groupf.dating.util.PromptBuilder;
@@ -21,6 +23,7 @@ import java.util.regex.Pattern;
 public class BioServiceImpl implements BioService {
 
     private final ClaudeApiService claudeApiService;
+    private final ProfileRequestRepository profileRequestRepository;
 
     @Override
     public BioRewriteResponse rewriteBio(BioRewriteRequest request) {
@@ -34,7 +37,24 @@ public class BioServiceImpl implements BioService {
         String response = claudeApiService.callClaudeApi(systemPrompt, userPrompt);
         BioRewriteResponse result = parseRewrittenBios(response, request.getBio(), tone.getValue());
         log.info("Successfully generated {} bio rewrites", result.getRewrittenBios().size());
+
+        saveToDatabase(request.getBio(), tone.getValue(), result.getRewrittenBios());
+
         return result;
+    }
+
+    private void saveToDatabase(String originalBio, String tone, List<String> rewrittenBios) {
+        try {
+            ProfileOptimizationRequest entity = new ProfileOptimizationRequest();
+            entity.setOriginalBio(originalBio);
+            entity.setTonePreference(tone);
+            entity.setRewrittenBios(rewrittenBios);
+            entity.setCreatedAt(java.time.LocalDateTime.now());
+            profileRequestRepository.save(entity);
+            log.info("Bio rewrite result saved to database");
+        } catch (Exception e) {
+            log.error("Failed to save bio rewrite result to database", e);
+        }
     }
 
     /**
