@@ -3,11 +3,14 @@ package com.groupf.dating.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groupf.dating.dto.PhotoRankResponse;
+import com.groupf.dating.exception.IException;
+import com.groupf.dating.exception.ErrorCode;
+import com.groupf.dating.model.ProfileOptimizationRequest;
+import com.groupf.dating.repository.ProfileRequestRepository;
 import com.groupf.dating.service.ClaudeApiService;
 import com.groupf.dating.service.PhotoRankingService;
 import com.groupf.dating.util.ImageUtil;
 import com.groupf.dating.util.PromptBuilder;
-import com.groupf.dating.util.ValidationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,17 +31,20 @@ public class PhotoRankingServiceImpl implements PhotoRankingService {
 
     private final ClaudeApiService claudeApiService;
     private final ObjectMapper objectMapper;
+    private final ProfileRequestRepository profileRequestRepository;
 
     @Override
     public PhotoRankResponse rankPhotos(MultipartFile[] photos) {
         // Validate photo count
         if (photos == null || photos.length == 0) {
-            throw new IllegalArgumentException("No photos provided");
+            throw new IException(ErrorCode.PHOTO_TOO_FEW);
         }
 
-        String countError = ValidationUtil.getPhotoCountValidationError(photos.length);
-        if (countError != null) {
-            throw new IllegalArgumentException(countError);
+        if (photos.length < com.groupf.dating.common.AppConstants.PHOTO_MIN_COUNT) {
+            throw new IException(ErrorCode.PHOTO_TOO_FEW);
+        }
+        if (photos.length > com.groupf.dating.common.AppConstants.PHOTO_MAX_COUNT) {
+            throw new IException(ErrorCode.PHOTO_TOO_MANY);
         }
 
         // Validate and convert photos
@@ -49,7 +55,7 @@ public class PhotoRankingServiceImpl implements PhotoRankingService {
             MultipartFile photo = photos[i];
 
             if (!ImageUtil.isValidImage(photo)) {
-                throw new IllegalArgumentException(
+                throw new IException(ErrorCode.PHOTO_INVALID_FORMAT,
                     "Invalid image: " + photo.getOriginalFilename());
             }
 
@@ -61,8 +67,8 @@ public class PhotoRankingServiceImpl implements PhotoRankingService {
                         photo.getOriginalFilename() : "Photo " + (i + 1));
             } catch (IOException e) {
                 log.error("Failed to process image: {}", photo.getOriginalFilename(), e);
-                throw new RuntimeException("Failed to process image: " +
-                        photo.getOriginalFilename());
+                throw new IException(ErrorCode.PHOTO_PROCESS_FAILED,
+                    "Failed to process image: " + photo.getOriginalFilename());
             }
         }
 
@@ -74,7 +80,31 @@ public class PhotoRankingServiceImpl implements PhotoRankingService {
         String response = claudeApiService.callClaudeApiWithVision(systemPrompt, userPrompt, imageContents);
         PhotoRankResponse result = parsePhotoRankings(response, photoNames);
         log.info("Successfully ranked {} photos", result.getRankedPhotos().size());
+
+        saveToDatabase(photoNames, result.getRankedPhotos());
+
         return result;
+    }
+
+    private void saveToDatabase(List<String> photoNames, List<PhotoRankResponse.RankedPhoto> rankedPhotos) {
+        try {
+            ProfileOptimizationRequest entity = new ProfileOptimizationRequest();
+            entity.setPhotoUrls(photoNames);
+
+            List<ProfileOptimizationRequest.PhotoRanking> rankings = rankedPhotos.stream()
+                    .map(rp -> new ProfileOptimizationRequest.PhotoRanking(
+                            rp.getPhotoName(),
+                            rp.getRank(),
+                            rp.getScore(),
+                            rp.getReasoning()))
+                    .toList();
+            entity.setRankedPhotos(rankings);
+            entity.setCreatedAt(java.time.LocalDateTime.now());
+            profileRequestRepository.save(entity);
+            log.info("Photo ranking result saved to database");
+        } catch (Exception e) {
+            log.error("Failed to save photo ranking result to database", e);
+        }
     }
 
     /**
