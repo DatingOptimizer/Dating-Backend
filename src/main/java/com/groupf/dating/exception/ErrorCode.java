@@ -28,9 +28,12 @@ public enum ErrorCode {
 
     // ============ Photo Related Errors (2000-2099) ============
     PHOTO_INVALID_URL(2000, "Invalid photo URL format", HttpStatus.BAD_REQUEST),
+    PHOTO_INVALID_FORMAT(2003, "Invalid image format, only JPEG and PNG are supported", HttpStatus.BAD_REQUEST),
     PHOTO_TOO_FEW(2001, "At least 2 photos required for ranking", HttpStatus.BAD_REQUEST),
-    PHOTO_TOO_MANY(2002, "Maximum 10 photos allowed", HttpStatus.BAD_REQUEST),
+    PHOTO_TOO_MANY(2002, "Maximum 5 photos allowed", HttpStatus.BAD_REQUEST),
+    PHOTO_TOO_LARGE(2004, "Image size must not exceed 10MB", HttpStatus.BAD_REQUEST),
     PHOTO_DOWNLOAD_FAILED(2050, "Failed to download photo from URL", HttpStatus.BAD_REQUEST),
+    PHOTO_PROCESS_FAILED(2052, "Failed to process photo", HttpStatus.INTERNAL_SERVER_ERROR),
     PHOTO_ANALYSIS_FAILED(2051, "Failed to analyze photos", HttpStatus.INTERNAL_SERVER_ERROR),
 
     // ============ Conversation Related Errors (3000-3099) ============
