@@ -10,8 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.util.List;
 
@@ -20,7 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ClaudeApiServiceImpl implements ClaudeApiService {
 
-    private final WebClient claudeWebClient;
+    private final RestClient claudeRestClient;
     private final ObjectMapper objectMapper;
 
     @Value("${claude.api.model}")
@@ -30,45 +30,45 @@ public class ClaudeApiServiceImpl implements ClaudeApiService {
     private int maxTokens;
 
     @Override
-    public Mono<String> callClaudeApi(String systemPrompt, String userPrompt) {
+    public String callClaudeApi(String systemPrompt, String userPrompt) {
+        ObjectNode requestBody = buildTextRequest(systemPrompt, userPrompt);
+
+        log.debug("Calling Claude API with text request");
+
         try {
-            ObjectNode requestBody = buildTextRequest(systemPrompt, userPrompt);
-
-            log.debug("Calling Claude API with text request");
-
-            return claudeWebClient.post()
-                    .bodyValue(requestBody)
+            JsonNode response = claudeRestClient.post()
+                    .body(requestBody)
                     .retrieve()
-                    .bodyToMono(JsonNode.class)
-                    .map(this::extractTextResponse)
-                    .doOnSuccess(response -> log.debug("Claude API call successful"))
-                    .doOnError(error -> log.error("Claude API call failed", error))
-                    .onErrorResume(this::handleApiError);
-        } catch (Exception e) {
-            log.error("Error building Claude API request", e);
-            return Mono.error(new RuntimeException("Failed to build API request", e));
+                    .body(JsonNode.class);
+
+            String result = extractTextResponse(response);
+            log.debug("Claude API call successful");
+            return result;
+        } catch (RestClientException e) {
+            log.error("Claude API call failed", e);
+            throw handleApiError(e);
         }
     }
 
     @Override
-    public Mono<String> callClaudeApiWithVision(String systemPrompt, String userPrompt,
-                                                 List<ImageContent> images) {
+    public String callClaudeApiWithVision(String systemPrompt, String userPrompt,
+                                           List<ImageContent> images) {
+        ObjectNode requestBody = buildVisionRequest(systemPrompt, userPrompt, images);
+
+        log.debug("Calling Claude API with vision request ({} images)", images.size());
+
         try {
-            ObjectNode requestBody = buildVisionRequest(systemPrompt, userPrompt, images);
-
-            log.debug("Calling Claude API with vision request ({} images)", images.size());
-
-            return claudeWebClient.post()
-                    .bodyValue(requestBody)
+            JsonNode response = claudeRestClient.post()
+                    .body(requestBody)
                     .retrieve()
-                    .bodyToMono(JsonNode.class)
-                    .map(this::extractTextResponse)
-                    .doOnSuccess(response -> log.debug("Claude Vision API call successful"))
-                    .doOnError(error -> log.error("Claude Vision API call failed", error))
-                    .onErrorResume(this::handleApiError);
-        } catch (Exception e) {
-            log.error("Error building Claude Vision API request", e);
-            return Mono.error(new RuntimeException("Failed to build API request", e));
+                    .body(JsonNode.class);
+
+            String result = extractTextResponse(response);
+            log.debug("Claude Vision API call successful");
+            return result;
+        } catch (RestClientException e) {
+            log.error("Claude Vision API call failed", e);
+            throw handleApiError(e);
         }
     }
 
@@ -169,17 +169,18 @@ public class ClaudeApiServiceImpl implements ClaudeApiService {
     /**
      * Handles API errors
      */
-    private Mono<String> handleApiError(Throwable error) {
+    private RuntimeException handleApiError(Throwable error) {
         log.error("Claude API error: {}", error.getMessage());
 
-        if (error.getMessage() != null && error.getMessage().contains("429")) {
-            return Mono.error(new RuntimeException("Rate limit exceeded. Please try again later."));
-        } else if (error.getMessage() != null && error.getMessage().contains("401")) {
-            return Mono.error(new RuntimeException("Invalid API key"));
-        } else if (error.getMessage() != null && error.getMessage().contains("timeout")) {
-            return Mono.error(new RuntimeException("Request timeout. Please try again."));
+        String message = error.getMessage();
+        if (message != null && message.contains("429")) {
+            return new RuntimeException("Rate limit exceeded. Please try again later.");
+        } else if (message != null && message.contains("401")) {
+            return new RuntimeException("Invalid API key");
+        } else if (message != null && message.contains("timeout")) {
+            return new RuntimeException("Request timeout. Please try again.");
         }
 
-        return Mono.error(new RuntimeException("Claude API error: " + error.getMessage()));
+        return new RuntimeException("Claude API error: " + message);
     }
 }

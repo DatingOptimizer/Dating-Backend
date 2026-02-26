@@ -62,11 +62,6 @@
 			<scope>test</scope>
 		</dependency>
 
-		<!-- HTTP Client for Claude API calls -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webflux</artifactId>
-		</dependency>
 
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>

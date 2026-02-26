@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,15 +30,15 @@ public class PhotoRankingServiceImpl implements PhotoRankingService {
     private final ObjectMapper objectMapper;
 
     @Override
-    public Mono<PhotoRankResponse> rankPhotos(MultipartFile[] photos) {
+    public PhotoRankResponse rankPhotos(MultipartFile[] photos) {
         // Validate photo count
         if (photos == null || photos.length == 0) {
-            return Mono.error(new IllegalArgumentException("No photos provided"));
+            throw new IllegalArgumentException("No photos provided");
         }
 
         String countError = ValidationUtil.getPhotoCountValidationError(photos.length);
         if (countError != null) {
-            return Mono.error(new IllegalArgumentException(countError));
+            throw new IllegalArgumentException(countError);
         }
 
         // Validate and convert photos
@@ -50,8 +49,8 @@ public class PhotoRankingServiceImpl implements PhotoRankingService {
             MultipartFile photo = photos[i];
 
             if (!ImageUtil.isValidImage(photo)) {
-                return Mono.error(new IllegalArgumentException(
-                    "Invalid image: " + photo.getOriginalFilename()));
+                throw new IllegalArgumentException(
+                    "Invalid image: " + photo.getOriginalFilename());
             }
 
             try {
@@ -62,8 +61,8 @@ public class PhotoRankingServiceImpl implements PhotoRankingService {
                         photo.getOriginalFilename() : "Photo " + (i + 1));
             } catch (IOException e) {
                 log.error("Failed to process image: {}", photo.getOriginalFilename(), e);
-                return Mono.error(new RuntimeException("Failed to process image: " +
-                        photo.getOriginalFilename()));
+                throw new RuntimeException("Failed to process image: " +
+                        photo.getOriginalFilename());
             }
         }
 
@@ -72,11 +71,10 @@ public class PhotoRankingServiceImpl implements PhotoRankingService {
 
         log.info("Ranking {} photos", photos.length);
 
-        return claudeApiService.callClaudeApiWithVision(systemPrompt, userPrompt, imageContents)
-                .map(response -> parsePhotoRankings(response, photoNames))
-                .doOnSuccess(result -> log.info("Successfully ranked {} photos",
-                        result.getRankedPhotos().size()))
-                .doOnError(error -> log.error("Failed to rank photos", error));
+        String response = claudeApiService.callClaudeApiWithVision(systemPrompt, userPrompt, imageContents);
+        PhotoRankResponse result = parsePhotoRankings(response, photoNames);
+        log.info("Successfully ranked {} photos", result.getRankedPhotos().size());
+        return result;
     }
 
     /**

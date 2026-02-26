@@ -10,7 +10,6 @@ import com.groupf.dating.util.ValidationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,11 +24,11 @@ public class BioServiceImpl implements BioService {
     private final ClaudeApiService claudeApiService;
 
     @Override
-    public Mono<BioRewriteResponse> rewriteBio(BioRewriteRequest request) {
+    public BioRewriteResponse rewriteBio(BioRewriteRequest request) {
         // Validate input
         String validationError = ValidationUtil.getBioValidationError(request.getBio());
         if (validationError != null) {
-            return Mono.error(new IllegalArgumentException(validationError));
+            throw new IllegalArgumentException(validationError);
         }
 
         ToneType tone = ToneType.fromString(request.getTone());
@@ -39,11 +38,10 @@ public class BioServiceImpl implements BioService {
 
         log.info("Rewriting bio with tone: {}", tone.getValue());
 
-        return claudeApiService.callClaudeApi(systemPrompt, userPrompt)
-                .map(response -> parseRewrittenBios(response, request.getBio(), tone.getValue()))
-                .doOnSuccess(result -> log.info("Successfully generated {} bio rewrites",
-                        result.getRewrittenBios().size()))
-                .doOnError(error -> log.error("Failed to rewrite bio", error));
+        String response = claudeApiService.callClaudeApi(systemPrompt, userPrompt);
+        BioRewriteResponse result = parseRewrittenBios(response, request.getBio(), tone.getValue());
+        log.info("Successfully generated {} bio rewrites", result.getRewrittenBios().size());
+        return result;
     }
 
     /**

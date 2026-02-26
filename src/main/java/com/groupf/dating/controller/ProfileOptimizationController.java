@@ -11,7 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import reactor.core.publisher.Mono;
 
 @Slf4j
 @RestController
@@ -49,14 +48,13 @@ public class ProfileOptimizationController {
      * @return Response containing 3 rewritten versions
      */
     @PostMapping("/rewrite-bio")
-    public Mono<ResponseEntity<BioRewriteResponse>> rewriteBio(
+    public ResponseEntity<BioRewriteResponse> rewriteBio(
             @Valid @RequestBody BioRewriteRequest request) {
         log.info("Received bio rewrite request with tone: {}", request.getTone());
 
-        return bioService.rewriteBio(request)
-                .map(ResponseEntity::ok)
-                .doOnSuccess(response -> log.info("Bio rewrite completed successfully"))
-                .doOnError(error -> log.error("Bio rewrite failed", error));
+        BioRewriteResponse response = bioService.rewriteBio(request);
+        log.info("Bio rewrite completed successfully");
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -86,14 +84,13 @@ public class ProfileOptimizationController {
      * @return Ranking results, sorted by rank in ascending order
      */
     @PostMapping(value = "/rank-photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Mono<ResponseEntity<PhotoRankResponse>> rankPhotos(
+    public ResponseEntity<PhotoRankResponse> rankPhotos(
             @RequestParam("photos") MultipartFile[] photos) {
         log.info("Received photo ranking request with {} photos", photos.length);
 
-        return photoRankingService.rankPhotos(photos)
-                .map(ResponseEntity::ok)
-                .doOnSuccess(response -> log.info("Photo ranking completed successfully"))
-                .doOnError(error -> log.error("Photo ranking failed", error));
+        PhotoRankResponse response = photoRankingService.rankPhotos(photos);
+        log.info("Photo ranking completed successfully");
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -126,13 +123,12 @@ public class ProfileOptimizationController {
      * @return Response containing 3-5 conversation starters
      */
     @PostMapping("/generate-openers")
-    public Mono<ResponseEntity<ConversationStarterResponse>> generateOpeners(
+    public ResponseEntity<ConversationStarterResponse> generateOpeners(
             @Valid @RequestBody ConversationStarterRequest request) {
         log.info("Received conversation starter request with tone: {}", request.getTone());
 
-        return conversationStarterService.generateStarters(request)
-                .map(ResponseEntity::ok)
-                .doOnSuccess(response -> log.info("Conversation starters generated successfully"))
-                .doOnError(error -> log.error("Conversation starter generation failed", error));
+        ConversationStarterResponse response = conversationStarterService.generateStarters(request);
+        log.info("Conversation starters generated successfully");
+        return ResponseEntity.ok(response);
     }
 }

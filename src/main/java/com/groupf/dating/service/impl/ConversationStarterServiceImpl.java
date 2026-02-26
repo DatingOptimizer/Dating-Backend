@@ -10,7 +10,6 @@ import com.groupf.dating.util.ValidationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,11 +24,11 @@ public class ConversationStarterServiceImpl implements ConversationStarterServic
     private final ClaudeApiService claudeApiService;
 
     @Override
-    public Mono<ConversationStarterResponse> generateStarters(ConversationStarterRequest request) {
+    public ConversationStarterResponse generateStarters(ConversationStarterRequest request) {
         // Validate input
         String validationError = ValidationUtil.getBioValidationError(request.getBio());
         if (validationError != null) {
-            return Mono.error(new IllegalArgumentException(validationError));
+            throw new IllegalArgumentException(validationError);
         }
 
         ToneType tone = ToneType.fromString(request.getTone());
@@ -39,11 +38,10 @@ public class ConversationStarterServiceImpl implements ConversationStarterServic
 
         log.info("Generating conversation starters with tone: {}", tone.getValue());
 
-        return claudeApiService.callClaudeApi(systemPrompt, userPrompt)
-                .map(response -> parseConversationStarters(response, request.getBio(), tone.getValue()))
-                .doOnSuccess(result -> log.info("Successfully generated {} conversation starters",
-                        result.getStarters().size()))
-                .doOnError(error -> log.error("Failed to generate conversation starters", error));
+        String response = claudeApiService.callClaudeApi(systemPrompt, userPrompt);
+        ConversationStarterResponse result = parseConversationStarters(response, request.getBio(), tone.getValue());
+        log.info("Successfully generated {} conversation starters", result.getStarters().size());
+        return result;
     }
 
     /**
