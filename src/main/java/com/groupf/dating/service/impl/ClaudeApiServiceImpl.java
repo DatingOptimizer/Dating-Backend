@@ -5,13 +5,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.groupf.dating.common.ApiConstants;
+import com.groupf.dating.exception.ClaudeApiException;
+import com.groupf.dating.exception.ErrorCode;
 import com.groupf.dating.service.ClaudeApiService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.util.List;
 
@@ -22,6 +26,7 @@ public class ClaudeApiServiceImpl implements ClaudeApiService {
 
     private final RestClient claudeRestClient;
     private final ObjectMapper objectMapper;
+    private final RetryTemplate claudeApiRetryTemplate;
 
     @Value("${claude.api.model}")
     private String model;
@@ -35,19 +40,21 @@ public class ClaudeApiServiceImpl implements ClaudeApiService {
 
         log.debug("Calling Claude API with text request");
 
-        try {
-            JsonNode response = claudeRestClient.post()
-                    .body(requestBody)
-                    .retrieve()
-                    .body(JsonNode.class);
+        return claudeApiRetryTemplate.execute(context -> {
+            try {
+                JsonNode response = claudeRestClient.post()
+                        .body(requestBody)
+                        .retrieve()
+                        .body(JsonNode.class);
 
-            String result = extractTextResponse(response);
-            log.debug("Claude API call successful");
-            return result;
-        } catch (RestClientException e) {
-            log.error("Claude API call failed", e);
-            throw handleApiError(e);
-        }
+                String result = extractTextResponse(response);
+                log.debug("Claude API call successful");
+                return result;
+            } catch (RestClientException e) {
+                log.error("Claude API call failed", e);
+                throw handleApiError(e);
+            }
+        });
     }
 
     @Override
@@ -57,19 +64,21 @@ public class ClaudeApiServiceImpl implements ClaudeApiService {
 
         log.debug("Calling Claude API with vision request ({} images)", images.size());
 
-        try {
-            JsonNode response = claudeRestClient.post()
-                    .body(requestBody)
-                    .retrieve()
-                    .body(JsonNode.class);
+        return claudeApiRetryTemplate.execute(context -> {
+            try {
+                JsonNode response = claudeRestClient.post()
+                        .body(requestBody)
+                        .retrieve()
+                        .body(JsonNode.class);
 
-            String result = extractTextResponse(response);
-            log.debug("Claude Vision API call successful");
-            return result;
-        } catch (RestClientException e) {
-            log.error("Claude Vision API call failed", e);
-            throw handleApiError(e);
-        }
+                String result = extractTextResponse(response);
+                log.debug("Claude Vision API call successful");
+                return result;
+            } catch (RestClientException e) {
+                log.error("Claude Vision API call failed", e);
+                throw handleApiError(e);
+            }
+        });
     }
 
     /**
@@ -149,38 +158,32 @@ public class ClaudeApiServiceImpl implements ClaudeApiService {
      * Extracts text response from Claude API response
      */
     private String extractTextResponse(JsonNode response) {
-        try {
-            JsonNode content = response.get("content");
-            if (content != null && content.isArray() && !content.isEmpty()) {
-                JsonNode firstContent = content.get(0);
-                if (firstContent.has("text")) {
-                    return firstContent.get("text").asText();
-                }
+        JsonNode content = response.get("content");
+        if (content != null && content.isArray() && !content.isEmpty()) {
+            JsonNode firstContent = content.get(0);
+            if (firstContent.has("text")) {
+                return firstContent.get("text").asText();
             }
-
-            log.error("Unexpected response format from Claude API: {}", response);
-            throw new RuntimeException("Failed to extract text from API response");
-        } catch (Exception e) {
-            log.error("Error parsing Claude API response", e);
-            throw new RuntimeException("Failed to parse API response", e);
         }
+
+        log.error("Unexpected response format from Claude API: {}", response);
+        throw new ClaudeApiException(ErrorCode.CLAUDE_RESPONSE_PARSE_ERROR);
     }
 
     /**
-     * Handles API errors
+     * Converts RestClient exceptions to ClaudeApiException for proper retry classification
      */
-    private RuntimeException handleApiError(Throwable error) {
-        log.error("Claude API error: {}", error.getMessage());
-
-        String message = error.getMessage();
-        if (message != null && message.contains("429")) {
-            return new RuntimeException("Rate limit exceeded. Please try again later.");
-        } else if (message != null && message.contains("401")) {
-            return new RuntimeException("Invalid API key");
-        } else if (message != null && message.contains("timeout")) {
-            return new RuntimeException("Request timeout. Please try again.");
+    private ClaudeApiException handleApiError(RestClientException error) {
+        if (error instanceof RestClientResponseException responseError) {
+            int statusCode = responseError.getStatusCode().value();
+            return ClaudeApiException.fromHttpStatus(statusCode, responseError.getMessage());
         }
 
-        return new RuntimeException("Claude API error: " + message);
+        String message = error.getMessage();
+        if (message != null && message.toLowerCase().contains("timeout")) {
+            return new ClaudeApiException(ErrorCode.CLAUDE_TIMEOUT, message, error);
+        }
+
+        return new ClaudeApiException(ErrorCode.CLAUDE_CONNECTION_ERROR, message, error);
     }
 }
