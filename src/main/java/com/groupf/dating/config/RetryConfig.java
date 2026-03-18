@@ -41,6 +41,9 @@ public class RetryConfig {
       @Override
       public boolean canRetry(RetryContext context) {
         Throwable lastThrowable = context.getLastThrowable();
+        if (lastThrowable == null) {
+          return true; // allow first attempt
+        }
         if (lastThrowable instanceof ClaudeApiException claudeEx) {
           return claudeEx.isRetryable() && super.canRetry(context);
         }
