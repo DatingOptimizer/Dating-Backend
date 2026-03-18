@@ -11,6 +11,7 @@ import com.groupf.dating.service.ClaudeApiService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -36,23 +37,28 @@ public class ClaudeApiServiceImpl implements ClaudeApiService {
 
     @Override
     public String callClaudeApi(String systemPrompt, String userPrompt) {
-        ObjectNode requestBody = buildTextRequest(systemPrompt, userPrompt);
+        String requestBody = buildTextRequest(systemPrompt, userPrompt);
 
         log.debug("Calling Claude API with text request");
 
         return claudeApiRetryTemplate.execute(context -> {
             try {
-                JsonNode response = claudeRestClient.post()
+                String responseBody = claudeRestClient.post()
+                        .contentType(MediaType.APPLICATION_JSON)
                         .body(requestBody)
                         .retrieve()
-                        .body(JsonNode.class);
+                        .body(String.class);
 
+                JsonNode response = objectMapper.readTree(responseBody);
                 String result = extractTextResponse(response);
                 log.debug("Claude API call successful");
                 return result;
             } catch (RestClientException e) {
                 log.error("Claude API call failed", e);
                 throw handleApiError(e);
+            } catch (Exception e) {
+                log.error("Failed to parse Claude response", e);
+                throw new ClaudeApiException(ErrorCode.CLAUDE_RESPONSE_PARSE_ERROR, e.getMessage(), e);
             }
         });
     }
@@ -60,23 +66,28 @@ public class ClaudeApiServiceImpl implements ClaudeApiService {
     @Override
     public String callClaudeApiWithVision(String systemPrompt, String userPrompt,
                                            List<ImageContent> images) {
-        ObjectNode requestBody = buildVisionRequest(systemPrompt, userPrompt, images);
+        String requestBody = buildVisionRequest(systemPrompt, userPrompt, images);
 
         log.debug("Calling Claude API with vision request ({} images)", images.size());
 
         return claudeApiRetryTemplate.execute(context -> {
             try {
-                JsonNode response = claudeRestClient.post()
+                String responseBody = claudeRestClient.post()
+                        .contentType(MediaType.APPLICATION_JSON)
                         .body(requestBody)
                         .retrieve()
-                        .body(JsonNode.class);
+                        .body(String.class);
 
+                JsonNode response = objectMapper.readTree(responseBody);
                 String result = extractTextResponse(response);
                 log.debug("Claude Vision API call successful");
                 return result;
             } catch (RestClientException e) {
                 log.error("Claude Vision API call failed", e);
                 throw handleApiError(e);
+            } catch (Exception e) {
+                log.error("Failed to parse Claude vision response", e);
+                throw new ClaudeApiException(ErrorCode.CLAUDE_RESPONSE_PARSE_ERROR, e.getMessage(), e);
             }
         });
     }
@@ -84,74 +95,82 @@ public class ClaudeApiServiceImpl implements ClaudeApiService {
     /**
      * Builds request body for text-only messages
      */
-    private ObjectNode buildTextRequest(String systemPrompt, String userPrompt) {
-        ObjectNode request = objectMapper.createObjectNode();
-        request.put("model", model);
-        request.put("max_tokens", maxTokens);
-        request.put("temperature", ApiConstants.TEMPERATURE);
+    private String buildTextRequest(String systemPrompt, String userPrompt) {
+        try {
+            ObjectNode request = objectMapper.createObjectNode();
+            request.put("model", model);
+            request.put("max_tokens", maxTokens);
+            request.put("temperature", ApiConstants.TEMPERATURE);
 
-        if (systemPrompt != null && !systemPrompt.isEmpty()) {
-            request.put("system", systemPrompt);
+            if (systemPrompt != null && !systemPrompt.isEmpty()) {
+                request.put("system", systemPrompt);
+            }
+
+            ArrayNode messages = objectMapper.createArrayNode();
+            ObjectNode userMessage = objectMapper.createObjectNode();
+            userMessage.put("role", "user");
+            userMessage.put("content", userPrompt);
+            messages.add(userMessage);
+
+            request.set("messages", messages);
+
+            return objectMapper.writeValueAsString(request);
+        } catch (Exception e) {
+            throw new ClaudeApiException(ErrorCode.CLAUDE_INVALID_REQUEST, "Failed to build request", e);
         }
-
-        ArrayNode messages = objectMapper.createArrayNode();
-        ObjectNode userMessage = objectMapper.createObjectNode();
-        userMessage.put("role", "user");
-        userMessage.put("content", userPrompt);
-        messages.add(userMessage);
-
-        request.set("messages", messages);
-
-        return request;
     }
 
     /**
      * Builds request body for vision messages (with images)
      */
-    private ObjectNode buildVisionRequest(String systemPrompt, String userPrompt,
-                                          List<ImageContent> images) {
-        ObjectNode request = objectMapper.createObjectNode();
-        request.put("model", model);
-        request.put("max_tokens", maxTokens);
-        request.put("temperature", ApiConstants.TEMPERATURE);
+    private String buildVisionRequest(String systemPrompt, String userPrompt,
+                                      List<ImageContent> images) {
+        try {
+            ObjectNode request = objectMapper.createObjectNode();
+            request.put("model", model);
+            request.put("max_tokens", maxTokens);
+            request.put("temperature", ApiConstants.TEMPERATURE);
 
-        if (systemPrompt != null && !systemPrompt.isEmpty()) {
-            request.put("system", systemPrompt);
+            if (systemPrompt != null && !systemPrompt.isEmpty()) {
+                request.put("system", systemPrompt);
+            }
+
+            ArrayNode messages = objectMapper.createArrayNode();
+            ObjectNode userMessage = objectMapper.createObjectNode();
+            userMessage.put("role", "user");
+
+            // Build content array with images and text
+            ArrayNode contentArray = objectMapper.createArrayNode();
+
+            // Add images first
+            for (ImageContent image : images) {
+                ObjectNode imageContent = objectMapper.createObjectNode();
+                imageContent.put("type", "image");
+
+                ObjectNode source = objectMapper.createObjectNode();
+                source.put("type", "base64");
+                source.put("media_type", image.getMediaType());
+                source.put("data", image.getBase64Data());
+
+                imageContent.set("source", source);
+                contentArray.add(imageContent);
+            }
+
+            // Add text prompt
+            ObjectNode textContent = objectMapper.createObjectNode();
+            textContent.put("type", "text");
+            textContent.put("text", userPrompt);
+            contentArray.add(textContent);
+
+            userMessage.set("content", contentArray);
+            messages.add(userMessage);
+
+            request.set("messages", messages);
+
+            return objectMapper.writeValueAsString(request);
+        } catch (Exception e) {
+            throw new ClaudeApiException(ErrorCode.CLAUDE_INVALID_REQUEST, "Failed to build vision request", e);
         }
-
-        ArrayNode messages = objectMapper.createArrayNode();
-        ObjectNode userMessage = objectMapper.createObjectNode();
-        userMessage.put("role", "user");
-
-        // Build content array with images and text
-        ArrayNode contentArray = objectMapper.createArrayNode();
-
-        // Add images first
-        for (ImageContent image : images) {
-            ObjectNode imageContent = objectMapper.createObjectNode();
-            imageContent.put("type", "image");
-
-            ObjectNode source = objectMapper.createObjectNode();
-            source.put("type", "base64");
-            source.put("media_type", image.getMediaType());
-            source.put("data", image.getBase64Data());
-
-            imageContent.set("source", source);
-            contentArray.add(imageContent);
-        }
-
-        // Add text prompt
-        ObjectNode textContent = objectMapper.createObjectNode();
-        textContent.put("type", "text");
-        textContent.put("text", userPrompt);
-        contentArray.add(textContent);
-
-        userMessage.set("content", contentArray);
-        messages.add(userMessage);
-
-        request.set("messages", messages);
-
-        return request;
     }
 
     /**
