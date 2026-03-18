@@ -27,6 +27,6 @@ public enum ToneType {
                 return tone;
             }
         }
-        throw new IllegalArgumentException(value + " is not a valid ToneType, Acceptable values are: casual, professional, bold, polite, concise");
+        throw new IllegalArgumentException(value + " is not a valid ToneType, Acceptable values are: casual, bold, polite, humorous, warm");
     }
 }
