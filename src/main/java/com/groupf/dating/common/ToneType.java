@@ -5,10 +5,10 @@ import lombok.Getter;
 @Getter
 public enum ToneType {
     CASUAL("casual", "friendly, relaxed, and conversational"),
-    PROFESSIONAL("professional", "polished, mature, and sophisticated"),
     BOLD("bold", "confident, direct, and attention-grabbing"),
     POLITE("polite", "respectful, courteous, and warm"),
-    CONCISE("concise", "brief, clear, and to the point");
+    HUMOROUS("humorous", "funny, playful, and light-hearted — use wit and clever humor naturally"),
+    WARM("warm", "sincere, empathetic, and heartfelt — speak with genuine emotion and warmth");
 
     private final String value;
     private final String description;
