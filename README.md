@@ -1,6 +1,6 @@
 # AI Dating Profile Optimizer - Backend
 
-CS 5500 Group 4: Yihan Wang, Kaichen Qu, Xujing Hui, Qianni Zhang
+CS 5500 Group 4: Yihan Wang, Kaichen Qu, Xujing Hui
 
 ## Overview
 
@@ -121,6 +121,11 @@ Content-Type: application/json
 }
 ```
 
+Valid tone values: `casual`, `bold`, `polite`, `humorous`, `warm`
+
+```json
+```
+
 Response:
 ```json
 {
@@ -139,26 +144,33 @@ Response:
 POST /api/profile/generate-openers
 Content-Type: application/json
 
-"I love hiking and photography"
+{
+  "bio": "I love hiking and photography",
+  "tone": "polite"
+}
 ```
+
+Valid tone values: `casual`, `bold`, `polite`, `humorous`, `warm`
 
 Response:
 ```json
-[
-  "I noticed you're into hiking too, what's been your favorite trail?",
-  "Your photography looks amazing! What camera do you use?",
-  "Fellow outdoor enthusiast here! Any hidden gem trails to recommend?"
-]
+{
+  "bio": "I love hiking and photography",
+  "starters": [
+    "I noticed you're into hiking too, what's been your favorite trail?",
+    "Your photography looks amazing! What camera do you use?",
+    "Fellow outdoor enthusiast here! Any hidden gem trails to recommend?"
+  ],
+  "tone": "polite"
+}
 ```
 
 ### Photo Ranking
 ```http
 POST /api/profile/rank-photos
-Content-Type: application/json
+Content-Type: multipart/form-data
 
-{
-  "photoUrls": ["url1", "url2", "url3"]
-}
+photos: <file1>, <file2>, ...
 ```
 
 ## Development Workflow
@@ -202,7 +214,7 @@ The application supports hot reload during development. Just rebuild:
   "userId": "string",
   "originalBio": "string",
   "photoUrls": ["string"],
-  "tonePreference": "casual|professional|bold",
+  "tonePreference": "casual|bold|polite|humorous|warm",
   "createdAt": "ISODate",
   "updatedAt": "ISODate",
   "rewrittenBios": ["string"],
@@ -226,17 +238,17 @@ The application supports hot reload during development. Just rebuild:
 - [x] Create basic REST API structure
 - [x] Add CORS configuration for React frontend
 
-### 📝 Week 3-4: Core Features
-- [ ] Implement Claude API integration service
-- [ ] Complete bio rewriting with multiple tones
-- [ ] Add conversation starter generation
+### ✅ Week 3-4: Core Features (DONE)
+- [x] Implement Claude API integration service
+- [x] Complete bio rewriting with multiple tones (casual, bold, polite, humorous, warm)
+- [x] Add conversation starter generation
 - [ ] Implement basic content moderation
 
-### 📝 Week 5-6: Photo Ranking & Integration
-- [ ] Implement photo ranking with Claude Vision API
-- [ ] Add file upload handling
-- [ ] Connect with React frontend
-- [ ] Add error handling and validation
+### ✅ Week 5-6: Photo Ranking & Integration (DONE)
+- [x] Implement photo ranking with Claude Vision API
+- [x] Add file upload handling
+- [x] Connect with React frontend
+- [x] Add error handling and validation
 
 ### 📝 Week 7-8: Testing & Deployment
 - [ ] Write unit and integration tests
