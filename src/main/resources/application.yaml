@@ -5,9 +5,22 @@ spring:
   config:
     import: "optional:file:.env[.properties]"
 
-  # MongoDB Configuration
-  mongodb:
-    uri: ${MONGODB_URI:mongodb://localhost:27017/dating-optimizer}
+  # PostgreSQL datasource
+  datasource:
+    url: ${SUPABASE_DB_JDBC_URL}
+    username: ${SUPABASE_DB_USERNAME}
+    password: ${SUPABASE_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  # JPA
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
 
   # File Upload Configuration
   servlet:
@@ -30,6 +43,10 @@ claude:
     url: https://api.anthropic.com/v1/messages
     model: claude-sonnet-4-5-20250929
     max-tokens: 1024
+
+# Supabase JWT secret for verifying tokens
+supabase:
+  jwt-secret: ${SUPABASE_JWT_SECRET}
 
 # CORS Configuration (for React frontend)
 cors:
