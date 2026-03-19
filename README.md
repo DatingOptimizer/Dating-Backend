@@ -2,6 +2,10 @@
 
 CS 5500 Group 4: Yihan Wang, Kaichen Qu, Xujing Hui
 
+**Live URLs:**
+- Frontend: https://dating-optimizer.netlify.app
+- Backend API: https://dating-optimizer-backend.onrender.com
+
 ## Overview
 
 Spring Boot REST API backend for the AI Dating Profile Optimizer application. This service uses Claude AI API to optimize dating profiles by rewriting bios, ranking photos, and generating conversation starters.
@@ -380,11 +384,13 @@ curl http://localhost:8080/api/health
 | `SUPABASE_URL` | your supabase project url |
 | `SUPABASE_JWT_SECRET` | your jwt secret |
 | `CLAUDE_API_KEY` | your claude api key |
-| `ALLOWED_ORIGINS` | `https://your-frontend.netlify.app` |
+| `ALLOWED_ORIGINS` | `https://dating-optimizer.netlify.app` |
 
 5. Click **Create Web Service** — Render auto-deploys on every push to `main`
 
 > **Note:** Free tier spins down after 15 minutes of inactivity. First request after idle takes ~30 seconds to wake up.
+
+The deployed backend is live at: https://dating-optimizer-backend.onrender.com
 
 ## Troubleshooting
 
