@@ -10,7 +10,8 @@ Spring Boot REST API backend for the AI Dating Profile Optimizer application. Th
 
 - **Backend Framework**: Spring Boot 4.0.2
 - **Language**: Java 21
-- **Database**: MongoDB
+- **Database**: PostgreSQL (Supabase)
+- **Auth**: Supabase Auth + Spring Security (JWT/HS256)
 - **AI**: Claude API (Anthropic)
 - **Build Tool**: Maven
 
@@ -18,12 +19,13 @@ Spring Boot REST API backend for the AI Dating Profile Optimizer application. Th
 
 ```
 src/main/java/com/groupf/dating/
-├── config/              # Configuration classes (CORS, etc.)
+├── config/              # Configuration classes (CORS, Security, DataSource)
 ├── controller/          # REST API endpoints
 ├── dto/                 # Data Transfer Objects (request/response)
-├── model/               # MongoDB entities
-├── repository/          # MongoDB repositories
+├── model/               # JPA entities
+├── repository/          # JPA repositories
 ├── service/             # Business logic
+├── util/                # Helpers (PromptBuilder, StringListConverter, ImageUtil)
 └── DatingApplication.java
 ```
 
@@ -31,28 +33,17 @@ src/main/java/com/groupf/dating/
 
 - Java 21 (recommended) or Java 17+
 - Maven 3.9+
-- MongoDB (local or MongoDB Atlas)
+- Supabase account + project (free tier works)
 - Claude API Key from Anthropic
 
 ## Setup Instructions
 
-### 1. Install MongoDB
+### 1. Create a Supabase Project
 
-**Option A: Local MongoDB**
-```bash
-# macOS
-brew tap mongodb/brew
-brew install mongodb-community
-brew services start mongodb-community
-
-# Verify MongoDB is running
-mongosh
-```
-
-**Option B: MongoDB Atlas (Cloud)**
-- Sign up at [mongodb.com/atlas](https://www.mongodb.com/atlas)
-- Create a free cluster
-- Get your connection string
+1. Sign up at [supabase.com](https://supabase.com) and create a new project
+2. Go to **Settings → Database** to find your connection string
+3. Go to **Settings → API** to find your JWT secret and anon key
+4. The `profile_requests` table is created automatically by Hibernate on first run
 
 ### 2. Get Claude API Key
 
@@ -63,20 +54,26 @@ mongosh
 
 ### 3. Configure Environment Variables
 
-Create a `.env` file in the project root (or set environment variables):
+Create a `.env` file in the project root:
 
 ```bash
-# MongoDB Connection
-MONGODB_URI=mongodb://localhost:27017/dating-optimizer
-
 # Claude API
 CLAUDE_API_KEY=sk-ant-your-api-key-here
 
 # CORS (for React frontend)
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
-```
 
-**For local development**, you can also edit `src/main/resources/application.yaml` directly.
+# Supabase PostgreSQL — original URI (for reference)
+SUPABASE_DB_URL=postgresql://postgres:[password]@db.your-project-id.supabase.co:5432/postgres
+
+# Spring Boot JDBC format (derived from above)
+SUPABASE_DB_JDBC_URL=jdbc:postgresql://db.your-project-id.supabase.co:5432/postgres?sslmode=require
+SUPABASE_DB_USERNAME=postgres
+SUPABASE_DB_PASSWORD=your-db-password
+
+# Supabase Auth (Settings → API → JWT Secret)
+SUPABASE_JWT_SECRET=your-jwt-secret
+```
 
 ### 4. Run the Application
 
@@ -123,8 +120,7 @@ Content-Type: application/json
 
 Valid tone values: `casual`, `bold`, `polite`, `humorous`, `warm`
 
-```json
-```
+All protected endpoints require: `Authorization: Bearer <supabase-jwt-token>`
 
 Response:
 ```json
@@ -204,37 +200,30 @@ The application supports hot reload during development. Just rebuild:
 ./mvnw compile
 ```
 
-## MongoDB Database Schema
+## Database Schema (PostgreSQL / Supabase)
 
-### Collection: `profile_requests`
+### Table: `profile_requests`
 
-```javascript
-{
-  "_id": "ObjectId",
-  "userId": "string",
-  "originalBio": "string",
-  "photoUrls": ["string"],
-  "tonePreference": "casual|bold|polite|humorous|warm",
-  "createdAt": "ISODate",
-  "updatedAt": "ISODate",
-  "rewrittenBios": ["string"],
-  "rankedPhotos": [
-    {
-      "photoUrl": "string",
-      "rank": "number",
-      "score": "number",
-      "reasoning": "string"
-    }
-  ],
-  "conversationStarters": ["string"]
-}
-```
+Auto-created by Hibernate on first startup.
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | UUID (PK) | Auto-generated |
+| `user_id` | VARCHAR | Supabase auth user UUID |
+| `original_bio` | TEXT | User's original bio |
+| `tone_preference` | VARCHAR | casual / bold / polite / humorous / warm |
+| `rewritten_bios` | TEXT | JSON array of rewritten bios |
+| `conversation_starters` | TEXT | JSON array of starters |
+| `ranked_photos` | TEXT | JSON array of photo rankings |
+| `created_at` | TIMESTAMP | Record creation time |
+
+Registered users are managed automatically by Supabase in the built-in `auth.users` table. View them in **Supabase Dashboard → Authentication → Users**.
 
 ## Next Steps (Week by Week)
 
 ### ✅ Week 1-2: Project Setup (DONE)
 - [x] Fix Spring Boot configuration
-- [x] Set up MongoDB connection
+- [x] Set up Supabase PostgreSQL connection
 - [x] Create basic REST API structure
 - [x] Add CORS configuration for React frontend
 
@@ -253,7 +242,7 @@ The application supports hot reload during development. Just rebuild:
 ### 📝 Week 7-8: Testing & Deployment
 - [ ] Write unit and integration tests
 - [ ] Deploy to Heroku
-- [ ] Configure MongoDB Atlas for production
+- [ ] Configure Supabase production environment
 - [ ] Performance testing
 
 ## Deployment to Heroku
@@ -265,12 +254,13 @@ heroku login
 # Create Heroku app
 heroku create dating-optimizer-api
 
-# Add MongoDB addon (or use MongoDB Atlas)
-heroku addons:create mongocloud:free
-
 # Set environment variables
 heroku config:set CLAUDE_API_KEY=sk-ant-your-key
 heroku config:set ALLOWED_ORIGINS=https://your-frontend.netlify.app
+heroku config:set SUPABASE_DB_JDBC_URL=jdbc:postgresql://db.your-project-id.supabase.co:5432/postgres?sslmode=require
+heroku config:set SUPABASE_DB_USERNAME=postgres
+heroku config:set SUPABASE_DB_PASSWORD=your-db-password
+heroku config:set SUPABASE_JWT_SECRET=your-jwt-secret
 
 # Deploy
 git push heroku main
@@ -278,17 +268,11 @@ git push heroku main
 
 ## Troubleshooting
 
-### MongoDB Connection Issues
-```bash
-# Check if MongoDB is running
-brew services list | grep mongodb
-
-# Start MongoDB
-brew services start mongodb-community
-
-# Check connection
-mongosh mongodb://localhost:27017/dating-optimizer
-```
+### Supabase Connection Issues
+- Ensure `SUPABASE_DB_JDBC_URL` uses JDBC format: `jdbc:postgresql://...` not `postgresql://...`
+- Ensure `?sslmode=require` is appended to the JDBC URL
+- Check your DB password doesn't have unescaped special characters
+- Verify the Supabase project is not paused (free tier pauses after inactivity)
 
 ### Port Already in Use
 ```bash
@@ -315,8 +299,8 @@ brew install openjdk@21
 ## Team Resources
 
 - **API Documentation**: Update as you add endpoints
-- **Postman Collection**: Create shared collection for testing
-- **MongoDB Compass**: Use for database visualization
+- **Postman Collection**: Create shared collection for testing (add `Authorization: Bearer <token>` header)
+- **Supabase Dashboard**: View users (Authentication → Users) and data (Table Editor)
 - **Heroku Dashboard**: Monitor deployment and logs
 
 ## License
