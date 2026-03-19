@@ -44,6 +44,10 @@ public class ProfileOptimizationRequest {
     @Column(name = "conversation_starters", columnDefinition = "TEXT")
     private List<String> conversationStarters;
 
+    @Convert(converter = StringListConverter.class)
+    @Column(name = "photo_urls", columnDefinition = "TEXT")
+    private List<String> photoUrls;
+
     @Column(name = "ranked_photos", columnDefinition = "TEXT")
     private String rankedPhotosJson;
 

@@ -46,6 +46,7 @@ claude:
 
 # Supabase JWT secret for verifying tokens
 supabase:
+  url: ${SUPABASE_URL}
   jwt-secret: ${SUPABASE_JWT_SECRET}
 
 # CORS Configuration (for React frontend)
