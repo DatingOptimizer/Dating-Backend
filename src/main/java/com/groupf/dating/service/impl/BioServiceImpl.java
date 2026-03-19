@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -38,14 +40,16 @@ public class BioServiceImpl implements BioService {
         BioRewriteResponse result = parseRewrittenBios(response, request.getBio(), tone.getValue());
         log.info("Successfully generated {} bio rewrites", result.getRewrittenBios().size());
 
-        saveToDatabase(request.getBio(), tone.getValue(), result.getRewrittenBios());
+        String userId = SecurityContextHolder.getContext().getAuthentication().getName();
+        saveToDatabase(request.getBio(), tone.getValue(), result.getRewrittenBios(), userId);
 
         return result;
     }
 
-    private void saveToDatabase(String originalBio, String tone, List<String> rewrittenBios) {
+    private void saveToDatabase(String originalBio, String tone, List<String> rewrittenBios, String userId) {
         try {
             ProfileOptimizationRequest entity = new ProfileOptimizationRequest();
+            entity.setUserId(userId);
             entity.setOriginalBio(originalBio);
             entity.setTonePreference(tone);
             entity.setRewrittenBios(rewrittenBios);
