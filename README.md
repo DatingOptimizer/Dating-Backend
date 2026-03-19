@@ -337,30 +337,54 @@ Registered users are managed automatically by Supabase in the built-in `auth.use
 
 ### 📝 Week 7-8: Testing & Deployment
 - [x] Write unit and integration tests
-- [ ] Deploy to Heroku
+- [x] Deploy to Render
 - [ ] Configure Supabase production environment
 - [ ] Performance testing
 
-## Deployment to Heroku
+## Deployment to Render
+
+The backend is containerized with Docker and deployed on [Render](https://render.com) (free tier).
+
+### Test Docker locally first
 
 ```bash
-# Login to Heroku
-heroku login
+# Build the image
+docker build -t dating-backend .
 
-# Create Heroku app
-heroku create dating-optimizer-api
+# Run with your .env file
+docker run -p 8080:8080 --env-file .env dating-backend
 
-# Set environment variables
-heroku config:set CLAUDE_API_KEY=sk-ant-your-key
-heroku config:set ALLOWED_ORIGINS=https://your-frontend.netlify.app
-heroku config:set SUPABASE_DB_JDBC_URL=jdbc:postgresql://db.your-project-id.supabase.co:5432/postgres?sslmode=require
-heroku config:set SUPABASE_DB_USERNAME=postgres
-heroku config:set SUPABASE_DB_PASSWORD=your-db-password
-heroku config:set SUPABASE_JWT_SECRET=your-jwt-secret
-
-# Deploy
-git push heroku main
+# Verify
+curl http://localhost:8080/api/health
 ```
+
+### Deploy on Render
+
+1. Go to [render.com](https://render.com) → **New → Web Service**
+2. Connect your GitHub repo
+3. Configure:
+
+| Field | Value |
+|---|---|
+| Language | Docker |
+| Branch | `main` |
+| Instance Type | Free |
+
+4. Add environment variables under **Environment**:
+
+| Key | Value |
+|---|---|
+| `SUPABASE_DB_JDBC_URL` | your jdbc url |
+| `SUPABASE_DB_USERNAME` | your username |
+| `SUPABASE_DB_PASSWORD` | your password |
+| `SUPABASE_URL` | your supabase project url |
+| `SUPABASE_JWT_SECRET` | your jwt secret |
+| `CLAUDE_API_KEY` | your claude api key |
+| `ALLOWED_ORIGINS` | `https://your-frontend.netlify.app` |
+
+5. Click **Create Web Service** — Render auto-deploys on every push to `main`
+
+> **Note:** Free tier spins down after 15 minutes of inactivity. First request after idle takes ~30 seconds to wake up.
 
 ## Troubleshooting
 
