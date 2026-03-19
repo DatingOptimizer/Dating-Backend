@@ -11,7 +11,7 @@ Spring Boot REST API backend for the AI Dating Profile Optimizer application. Th
 - **Backend Framework**: Spring Boot 4.0.2
 - **Language**: Java 21
 - **Database**: PostgreSQL (Supabase)
-- **Auth**: Supabase Auth + Spring Security (JWT/HS256)
+- **Auth**: Supabase Auth + Spring Security (JWT/ES256 via JWKS)
 - **AI**: Claude API (Anthropic)
 - **Build Tool**: Maven
 
@@ -44,6 +44,20 @@ src/main/java/com/groupf/dating/
 2. Go to **Settings → Database** to find your connection string
 3. Go to **Settings → API** to find your JWT secret and anon key
 4. The `profile_requests` table is created automatically by Hibernate on first run
+5. Create the `saved_items` table manually in **Supabase → SQL Editor**:
+
+```sql
+CREATE TABLE IF NOT EXISTS saved_items (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    TEXT NOT NULL,
+  type       TEXT NOT NULL CHECK (type IN ('BIO', 'STARTER')),
+  content    TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_saved_items_user_type
+  ON saved_items (user_id, type, created_at DESC);
+```
 
 ### 2. Get Claude API Key
 
@@ -93,6 +107,8 @@ The API will start on `http://localhost:8080`
 
 ## API Endpoints
 
+> All protected endpoints require: `Authorization: Bearer <supabase-jwt-token>`
+
 ### Health Check
 ```http
 GET /api/health
@@ -119,8 +135,6 @@ Content-Type: application/json
 ```
 
 Valid tone values: `casual`, `bold`, `polite`, `humorous`, `warm`
-
-All protected endpoints require: `Authorization: Bearer <supabase-jwt-token>`
 
 Response:
 ```json
@@ -167,6 +181,47 @@ POST /api/profile/rank-photos
 Content-Type: multipart/form-data
 
 photos: <file1>, <file2>, ...
+```
+
+### Save & History
+
+```http
+GET /api/profile/history
+```
+Returns all saved bios and starters for the authenticated user.
+
+```http
+POST /api/profile/history/bio
+Content-Type: application/json
+
+{ "content": "Your saved bio text here" }
+```
+
+```http
+DELETE /api/profile/history/bio/{id}
+```
+
+```http
+POST /api/profile/history/starter
+Content-Type: application/json
+
+{ "content": "Your saved starter text here" }
+```
+
+```http
+DELETE /api/profile/history/starter/{id}
+```
+
+History response shape:
+```json
+{
+  "savedBios": [
+    { "id": "uuid", "content": "...", "createdAt": "2026-03-18T10:00:00" }
+  ],
+  "savedStarters": [
+    { "id": "uuid", "content": "...", "createdAt": "2026-03-18T10:01:00" }
+  ]
+}
 ```
 
 ## Development Workflow
@@ -217,6 +272,18 @@ Auto-created by Hibernate on first startup.
 | `ranked_photos` | TEXT | JSON array of photo rankings |
 | `created_at` | TIMESTAMP | Record creation time |
 
+### Table: `saved_items`
+
+Must be created manually in Supabase SQL Editor (see Setup step 5 above).
+
+| Column | Type | Description |
+|---|---|---|
+| `id` | UUID (PK) | Auto-generated |
+| `user_id` | TEXT | Supabase auth user UUID |
+| `type` | TEXT | `BIO` or `STARTER` |
+| `content` | TEXT | Saved text content |
+| `created_at` | TIMESTAMP | Record creation time |
+
 Registered users are managed automatically by Supabase in the built-in `auth.users` table. View them in **Supabase Dashboard → Authentication → Users**.
 
 ## Next Steps (Week by Week)
@@ -231,6 +298,7 @@ Registered users are managed automatically by Supabase in the built-in `auth.use
 - [x] Implement Claude API integration service
 - [x] Complete bio rewriting with multiple tones (casual, bold, polite, humorous, warm)
 - [x] Add conversation starter generation
+- [x] Add save/history endpoints for bios and starters
 - [ ] Implement basic content moderation
 
 ### ✅ Week 5-6: Photo Ranking & Integration (DONE)
