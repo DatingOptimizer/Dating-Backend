@@ -27,8 +27,8 @@ public class GlobalExceptionHandler {
         if (cause instanceof ClaudeApiException claudeEx) {
             return handleClaudeApiException(claudeEx, request);
         }
-        if (cause instanceof IException iEx) {
-            return handleIException(iEx, request);
+        if (cause instanceof BusinessException bEx) {
+            return handleBusinessException(bEx, request);
         }
         if (cause instanceof RuntimeException rEx) {
             return handleRuntimeException(rEx, request);
@@ -61,9 +61,9 @@ public class GlobalExceptionHandler {
     /**
      * Handle business exceptions
      */
-    @ExceptionHandler(IException.class)
-    public ResponseEntity<ErrorResponse> handleIException(
-            IException ex, WebRequest request) {
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessException(
+            BusinessException ex, WebRequest request) {
         ErrorCode errorCode = ex.getErrorCode();
         log.warn("Business error [{}]: {}", errorCode.getCode(), ex.getMessage());
 
@@ -125,14 +125,14 @@ public class GlobalExceptionHandler {
 
         ErrorResponse error = ErrorResponse.builder()
                 .code(ErrorCode.FILE_UPLOAD_SIZE_EXCEEDED.getCode())
-                .status(HttpStatus.PAYLOAD_TOO_LARGE.value())
+                .status(HttpStatus.CONTENT_TOO_LARGE.value())
                 .error("File Too Large")
                 .message("Maximum upload size exceeded")
                 .path(request.getDescription(false).replace("uri=", ""))
                 .timestamp(LocalDateTime.now())
                 .build();
 
-        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(error);
+        return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE).body(error);
     }
 
     @ExceptionHandler(RuntimeException.class)

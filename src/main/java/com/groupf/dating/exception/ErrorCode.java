@@ -56,7 +56,7 @@ public enum ErrorCode {
     // ============ System Errors (9000-9099) ============
     SYSTEM_ERROR(9000, "Internal system error", HttpStatus.INTERNAL_SERVER_ERROR),
     DATABASE_ERROR(9001, "Database operation failed", HttpStatus.INTERNAL_SERVER_ERROR),
-    FILE_UPLOAD_SIZE_EXCEEDED(9002, "File upload size exceeded", HttpStatus.PAYLOAD_TOO_LARGE),
+    FILE_UPLOAD_SIZE_EXCEEDED(9002, "File upload size exceeded", HttpStatus.CONTENT_TOO_LARGE),
     EXTERNAL_SERVICE_ERROR(9003, "External service unavailable", HttpStatus.SERVICE_UNAVAILABLE),
     RETRY_EXHAUSTED(9004, "Maximum retry attempts exhausted", HttpStatus.SERVICE_UNAVAILABLE);
 
@@ -68,18 +68,6 @@ public enum ErrorCode {
         this.code = code;
         this.message = message;
         this.httpStatus = httpStatus;
-    }
-
-    /**
-     * Find error code enum by code number
-     */
-    public static ErrorCode fromCode(int code) {
-        for (ErrorCode errorCode : values()) {
-            if (errorCode.code == code) {
-                return errorCode;
-            }
-        }
-        return SYSTEM_ERROR;
     }
 
     /**

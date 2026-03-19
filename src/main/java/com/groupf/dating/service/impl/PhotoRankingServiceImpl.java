@@ -3,7 +3,7 @@ package com.groupf.dating.service.impl;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.groupf.dating.dto.PhotoRankResponse;
-import com.groupf.dating.exception.IException;
+import com.groupf.dating.exception.BusinessException;
 import com.groupf.dating.exception.ErrorCode;
 import com.groupf.dating.model.ProfileOptimizationRequest;
 import com.groupf.dating.repository.ProfileRequestRepository;
@@ -37,14 +37,14 @@ public class PhotoRankingServiceImpl implements PhotoRankingService {
     public PhotoRankResponse rankPhotos(MultipartFile[] photos) {
         // Validate photo count
         if (photos == null || photos.length == 0) {
-            throw new IException(ErrorCode.PHOTO_TOO_FEW);
+            throw new BusinessException(ErrorCode.PHOTO_TOO_FEW);
         }
 
         if (photos.length < com.groupf.dating.common.AppConstants.PHOTO_MIN_COUNT) {
-            throw new IException(ErrorCode.PHOTO_TOO_FEW);
+            throw new BusinessException(ErrorCode.PHOTO_TOO_FEW);
         }
         if (photos.length > com.groupf.dating.common.AppConstants.PHOTO_MAX_COUNT) {
-            throw new IException(ErrorCode.PHOTO_TOO_MANY);
+            throw new BusinessException(ErrorCode.PHOTO_TOO_MANY);
         }
 
         // Validate and convert photos
@@ -55,7 +55,7 @@ public class PhotoRankingServiceImpl implements PhotoRankingService {
             MultipartFile photo = photos[i];
 
             if (!ImageUtil.isValidImage(photo)) {
-                throw new IException(ErrorCode.PHOTO_INVALID_FORMAT,
+                throw new BusinessException(ErrorCode.PHOTO_INVALID_FORMAT,
                     "Invalid image: " + photo.getOriginalFilename());
             }
 
@@ -67,7 +67,7 @@ public class PhotoRankingServiceImpl implements PhotoRankingService {
                         photo.getOriginalFilename() : "Photo " + (i + 1));
             } catch (IOException e) {
                 log.error("Failed to process image: {}", photo.getOriginalFilename(), e);
-                throw new IException(ErrorCode.PHOTO_PROCESS_FAILED,
+                throw new BusinessException(ErrorCode.PHOTO_PROCESS_FAILED,
                     "Failed to process image: " + photo.getOriginalFilename());
             }
         }

@@ -6,36 +6,31 @@ import lombok.Getter;
  * Claude API related exception
  */
 @Getter
-public class ClaudeApiException extends RuntimeException {
+public class ClaudeApiException extends BusinessException {
 
-    private final ErrorCode errorCode;
     private final int httpStatusCode;
     private final boolean retryable;
 
     public ClaudeApiException(ErrorCode errorCode) {
-        super(errorCode.getMessage());
-        this.errorCode = errorCode;
+        super(errorCode);
         this.httpStatusCode = errorCode.getHttpStatus().value();
         this.retryable = errorCode.isRetryable();
     }
 
     public ClaudeApiException(ErrorCode errorCode, String customMessage) {
-        super(customMessage);
-        this.errorCode = errorCode;
+        super(errorCode, customMessage);
         this.httpStatusCode = errorCode.getHttpStatus().value();
         this.retryable = errorCode.isRetryable();
     }
 
     public ClaudeApiException(ErrorCode errorCode, Throwable cause) {
-        super(errorCode.getMessage(), cause);
-        this.errorCode = errorCode;
+        super(errorCode, cause);
         this.httpStatusCode = errorCode.getHttpStatus().value();
         this.retryable = errorCode.isRetryable();
     }
 
     public ClaudeApiException(ErrorCode errorCode, String customMessage, Throwable cause) {
-        super(customMessage, cause);
-        this.errorCode = errorCode;
+        super(errorCode, customMessage, cause);
         this.httpStatusCode = errorCode.getHttpStatus().value();
         this.retryable = errorCode.isRetryable();
     }
