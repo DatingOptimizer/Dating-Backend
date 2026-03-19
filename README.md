@@ -245,9 +245,37 @@ curl -X POST http://localhost:8080/api/profile/rewrite-bio \
 3. Test each endpoint
 
 ### Running Tests
+
+Run all tests:
 ```bash
 ./mvnw test
 ```
+
+Run a single test class:
+```bash
+./mvnw test -Dtest=BioServiceImplTest
+```
+
+Run tests matching a pattern:
+```bash
+./mvnw test -Dtest="*ServiceImpl*"
+```
+
+### Test Coverage
+
+Generate a coverage report (runs tests + produces HTML report):
+```bash
+./mvnw test
+```
+
+Then open the report in your browser:
+```bash
+open target/site/jacoco/index.html
+```
+
+The report shows line and branch coverage for every class. It is generated at `target/site/jacoco/index.html` after each `./mvnw test` run.
+
+To fail the build if coverage drops below a threshold, the JaCoCo plugin in `pom.xml` can be configured with a `check` goal — useful for CI enforcement.
 
 ### Hot Reload
 The application supports hot reload during development. Just rebuild:
@@ -308,7 +336,7 @@ Registered users are managed automatically by Supabase in the built-in `auth.use
 - [x] Add error handling and validation
 
 ### 📝 Week 7-8: Testing & Deployment
-- [ ] Write unit and integration tests
+- [x] Write unit and integration tests
 - [ ] Deploy to Heroku
 - [ ] Configure Supabase production environment
 - [ ] Performance testing
