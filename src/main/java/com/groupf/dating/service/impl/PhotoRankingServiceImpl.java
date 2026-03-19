@@ -110,14 +110,27 @@ public class PhotoRankingServiceImpl implements PhotoRankingService {
     /**
      * Parses Claude's response to extract photo rankings
      */
+    private String extractJson(String response) {
+        // Strip markdown code block if present (```json ... ``` or ``` ... ```)
+        String trimmed = response.trim();
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("```(?:json)?\\s*([\\s\\S]*?)```")
+                .matcher(trimmed);
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+        return trimmed;
+    }
+
     private PhotoRankResponse parsePhotoRankings(String response, List<String> photoNames) {
         List<PhotoRankResponse.RankedPhoto> rankedPhotos = new ArrayList<>();
+        String json = extractJson(response);
 
         try {
             // Try to parse as JSON first
-            if (response.trim().startsWith("[")) {
+            if (json.startsWith("[")) {
                 List<Map<String, Object>> rankings = objectMapper.readValue(
-                        response, new TypeReference<List<Map<String, Object>>>() {});
+                        json, new TypeReference<List<Map<String, Object>>>() {});
 
                 for (int i = 0; i < rankings.size() && i < photoNames.size(); i++) {
                     Map<String, Object> ranking = rankings.get(i);
