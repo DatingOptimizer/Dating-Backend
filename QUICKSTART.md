@@ -1,52 +1,72 @@
 # Quick Start Guide
 
-## What Was Fixed
+## Prerequisites
 
-### ❌ Original Issues:
-1. **Java 25** (early access) → Changed to **Java 21 LTS**
-2. **JPA dependency** (needs SQL database) → **Removed** (you're using MongoDB)
-3. **Both WebFlux and WebMVC** (conflict) → **Kept WebMVC** for REST APIs, WebFlux for HTTP client
-4. **Invalid test dependencies** → **Fixed** to use `spring-boot-starter-test`
-5. **Missing datasource** (caused startup failure) → **Configured MongoDB**
+- Java 21 (recommended) or Java 17+
+- Maven 3.9+
+- Supabase account + project (free tier works)
+- Claude API Key from Anthropic
 
-### ✅ What's Now Working:
-- ✅ Project compiles successfully
-- ✅ MongoDB configuration ready
-- ✅ CORS configured for React frontend
-- ✅ Basic REST API structure
-- ✅ Placeholder endpoints for your features
+## Setup
 
-## Run the Application
-
-### Option 1: Without MongoDB (Testing Mode)
-
-To test if the application starts (will fail when trying to connect to MongoDB, but validates the setup):
+### 1. Clone and Configure
 
 ```bash
+git clone <repo-url>
+cd dating
+```
+
+Create a `.env` file in the project root:
+
+```bash
+# Claude API
+CLAUDE_API_KEY=sk-ant-your-api-key-here
+
+# CORS (for React frontend)
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+
+# Supabase PostgreSQL (JDBC format)
+SUPABASE_DB_JDBC_URL=jdbc:postgresql://db.your-project-id.supabase.co:5432/postgres?sslmode=require
+SUPABASE_DB_USERNAME=postgres
+SUPABASE_DB_PASSWORD=your-db-password
+
+# Supabase Auth (Settings -> API -> JWT Secret)
+SUPABASE_JWT_SECRET=your-jwt-secret
+```
+
+### 2. Create the `saved_items` Table
+
+Run in **Supabase SQL Editor**:
+
+```sql
+CREATE TABLE IF NOT EXISTS saved_items (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    TEXT NOT NULL,
+  type       TEXT NOT NULL CHECK (type IN ('BIO', 'STARTER')),
+  content    TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_saved_items_user_type
+  ON saved_items (user_id, type, created_at DESC);
+```
+
+The `profile_requests` table is created automatically by Hibernate on first run.
+
+### 3. Run the Application
+
+```bash
+# Clean and compile
+./mvnw clean compile
+
+# Run
 ./mvnw spring-boot:run
 ```
 
-You'll see MongoDB connection errors, but the REST API structure is ready.
+The API starts on `http://localhost:8080`.
 
-### Option 2: With MongoDB (Full Mode)
+### 4. Verify
 
-1. **Install and start MongoDB:**
-```bash
-# macOS
-brew tap mongodb/brew
-brew install mongodb-community
-brew services start mongodb-community
-
-# Verify it's running
-mongosh
-```
-
-2. **Run the application:**
-```bash
-./mvnw spring-boot:run
-```
-
-3. **Test the health endpoint:**
 ```bash
 curl http://localhost:8080/api/health
 ```
@@ -56,173 +76,77 @@ Expected response:
 {
   "status": "UP",
   "service": "Dating Profile Optimizer API",
-  "timestamp": "2026-02-10T18:30:00"
+  "timestamp": "2026-03-20T10:00:00"
 }
 ```
 
 ## Project Structure
 
 ```
-dating/
-├── src/main/java/com/groupf/dating/
-│   ├── DatingApplication.java          # Main application
-│   ├── config/
-│   │   └── CorsConfig.java            # CORS for React frontend
-│   ├── controller/
-│   │   ├── HealthController.java       # Health check endpoint
-│   │   └── ProfileOptimizationController.java  # Main API endpoints
-│   ├── dto/                           # Request/Response objects
-│   │   ├── BioRewriteRequest.java
-│   │   └── BioRewriteResponse.java
-│   ├── model/
-│   │   └── ProfileOptimizationRequest.java  # MongoDB entity
-│   ├── repository/
-│   │   └── ProfileRequestRepository.java    # MongoDB repository
-│   └── service/                       # Business logic (TODO)
-├── src/main/resources/
-│   └── application.yaml               # Configuration
-└── pom.xml                            # Dependencies
+src/main/java/com/groupf/dating/
+├── common/              # Constants, enums (ToneType, ApiConstants)
+├── config/              # CORS, Security, RestClient, Jackson, Retry
+├── controller/          # REST API endpoints
+├── dto/                 # Request/Response DTOs
+├── exception/           # ErrorCode, ClaudeApiException, GlobalExceptionHandler
+├── model/               # JPA entities (ProfileOptimizationRequest, SavedItem)
+├── repository/          # JPA repositories
+├── service/             # Service interfaces
+│   └── impl/            # Service implementations
+├── util/                # PromptBuilder, ImageUtil, StringListConverter
+└── DatingApplication.java
 ```
 
-## Available API Endpoints
+## API Endpoints
 
-### 1. Health Check
-```bash
-GET http://localhost:8080/api/health
-```
+All protected endpoints require: `Authorization: Bearer <supabase-jwt-token>`
 
-### 2. Bio Rewriting (Placeholder)
-```bash
-POST http://localhost:8080/api/profile/rewrite-bio
-Content-Type: application/json
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | Health check (public) |
+| POST | `/api/profile/rewrite-bio` | Rewrite dating bio with AI |
+| POST | `/api/profile/generate-openers` | Generate conversation starters |
+| POST | `/api/profile/rank-photos` | Rank photos using Claude Vision |
+| GET | `/api/profile/history` | Get saved bios and starters |
+| POST | `/api/profile/history/bio` | Save a bio |
+| DELETE | `/api/profile/history/bio/{id}` | Delete a saved bio |
+| POST | `/api/profile/history/starter` | Save a starter |
+| DELETE | `/api/profile/history/starter/{id}` | Delete a saved starter |
 
-{
-  "bio": "I like traveling and pizza. Looking for someone fun.",
-  "tone": "casual"
-}
-```
-
-### 3. Generate Openers (Placeholder)
-```bash
-POST http://localhost:8080/api/profile/generate-openers
-Content-Type: application/json
-
-"I love hiking and photography"
-```
-
-### 4. Photo Ranking (Placeholder)
-```bash
-POST http://localhost:8080/api/profile/rank-photos?photos=url1&photos=url2
-```
-
-## Next Steps
-
-### Week 3-4: Implement Claude API Integration
-
-You need to create a `ClaudeService` class to integrate with the Claude API:
-
-```java
-// src/main/java/com/groupf/dating/service/ClaudeService.java
-@Service
-public class ClaudeService {
-
-    @Value("${claude.api.key}")
-    private String apiKey;
-
-    @Value("${claude.api.url}")
-    private String apiUrl;
-
-    private final WebClient webClient;
-
-    public ClaudeService(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.build();
-    }
-
-    public List<String> rewriteBio(String bio, String tone) {
-        // TODO: Implement Claude API call
-        // See: https://docs.anthropic.com/claude/reference/messages_post
-    }
-
-    public List<String> generateOpeners(String bio) {
-        // TODO: Implement Claude API call
-    }
-
-    public List<PhotoRanking> rankPhotos(List<String> photoUrls) {
-        // TODO: Implement Claude Vision API call
-    }
-}
-```
-
-### Testing Your API
-
-Use **Postman** or **curl** to test:
+## Testing
 
 ```bash
-# Test health endpoint
-curl http://localhost:8080/api/health
+# Run all tests
+./mvnw test
 
-# Test bio rewrite (with placeholder)
-curl -X POST http://localhost:8080/api/profile/rewrite-bio \
-  -H "Content-Type: application/json" \
-  -d '{"bio":"I like pizza and dogs","tone":"casual"}'
-```
+# Run a single test class
+./mvnw test -Dtest=BioServiceImplTest
 
-## Environment Variables
-
-Create a `.env` file (already in .gitignore):
-
-```bash
-MONGODB_URI=mongodb://localhost:27017/dating-optimizer
-CLAUDE_API_KEY=sk-ant-your-key-here
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+# View coverage report
+open target/site/jacoco/index.html
 ```
 
 ## Common Issues
 
-### MongoDB Connection Error
-**Error:** `Failed to connect to MongoDB`
-
-**Solution:** Make sure MongoDB is running:
-```bash
-brew services start mongodb-community
-mongosh  # Test connection
-```
+### Supabase Connection Error
+- Ensure JDBC URL format: `jdbc:postgresql://...` (not `postgresql://...`)
+- Append `?sslmode=require`
+- Check DB password for unescaped special characters
+- Verify Supabase project is not paused
 
 ### Port 8080 Already in Use
-**Error:** `Port 8080 is already in use`
-
-**Solution:**
 ```bash
-# Find process
 lsof -i :8080
-
-# Kill it
 kill -9 <PID>
 ```
 
 ### Claude API Key Missing
-**Error:** `CLAUDE_API_KEY not configured`
+Add `CLAUDE_API_KEY` to your `.env` file or set it as an environment variable.
 
-**Solution:** Add your API key to `application.yaml`:
-```yaml
-claude:
-  api:
-    key: sk-ant-your-actual-key-here
-```
+## Deployment
 
-## Resources
+The backend is deployed on Render (Docker): https://dating-optimizer-backend.onrender.com
 
-- **Claude API Docs:** https://docs.anthropic.com/
-- **Spring Boot Docs:** https://spring.io/projects/spring-boot
-- **MongoDB Docs:** https://www.mongodb.com/docs/
-- **README.md:** Comprehensive documentation
+Frontend is on Netlify: https://dating-optimizer.netlify.app
 
-## Team Workflow
-
-1. **Week 1-2:** ✅ Setup complete!
-2. **Week 3-4:** Implement `ClaudeService` and integrate API
-3. **Week 5-6:** Add file upload, connect React frontend
-4. **Week 7-8:** Testing, deployment to Heroku
-5. **Week 9:** Presentation and demo
-
-Good luck with your project! 🚀
+See [README.md](README.md) for full deployment instructions.
