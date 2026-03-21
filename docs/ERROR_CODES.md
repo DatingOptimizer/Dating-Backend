@@ -1,13 +1,13 @@
-# 错误码文档
+# Error Code Reference
 
-## 错误码格式
+## Error Code Format
 
-错误码采用分类编号设计，格式为 `[模块前缀][错误类型][序号]`
+Error codes use a categorized numbering scheme: `[module prefix][error type][sequence]`
 
-- **模块前缀**: BIO(1xxx), PHOTO(2xxx), CONV(3xxx), CLAUDE(4xxx), SYS(9xxx)
-- **错误类型**: 业务错误(0-4), 外部服务错误(5-7), 系统错误(8-9)
+- **Module prefix**: BIO(1xxx), PHOTO(2xxx), CONV(3xxx), CLAUDE(4xxx), SYS(9xxx)
+- **Error type**: Business errors(0-4), External service errors(5-7), System errors(8-9)
 
-## 错误响应格式
+## Error Response Format
 
 ```json
 {
@@ -15,110 +15,110 @@
   "status": 429,
   "error": "CLAUDE_RATE_LIMIT",
   "message": "Claude API rate limit exceeded",
-  "path": "/api/v1/profile/bio/rewrite",
-  "timestamp": "2025-01-15T10:30:00",
+  "path": "/api/profile/rewrite-bio",
+  "timestamp": "2026-03-20T10:30:00",
   "retryable": true
 }
 ```
 
-## 错误码列表
+## Error Code List
 
-### 通用错误 (1000-1099)
+### General Errors (1000-1099)
 
-| 错误码 | 错误名称 | HTTP 状态码 | 描述 | 可重试 |
-|--------|---------|------------|------|--------|
-| 0 | SUCCESS | 200 | 请求成功 | - |
-| 1000 | BAD_REQUEST | 400 | 请求参数无效 | ❌ |
-| 1001 | UNAUTHORIZED | 401 | 未授权访问 | ❌ |
-| 1002 | FORBIDDEN | 403 | 访问被禁止 | ❌ |
-| 1003 | NOT_FOUND | 404 | 资源未找到 | ❌ |
-| 1004 | VALIDATION_ERROR | 400 | 参数验证失败 | ❌ |
+| Code | Name | HTTP Status | Description | Retryable |
+|------|------|-------------|-------------|-----------|
+| 0 | SUCCESS | 200 | Request successful | - |
+| 1000 | BAD_REQUEST | 400 | Invalid request parameters | No |
+| 1001 | UNAUTHORIZED | 401 | Unauthorized access | No |
+| 1002 | FORBIDDEN | 403 | Access forbidden | No |
+| 1003 | NOT_FOUND | 404 | Resource not found | No |
+| 1004 | VALIDATION_ERROR | 400 | Parameter validation failed | No |
 
-### Bio 相关错误 (1100-1199)
+### Bio Errors (1100-1199)
 
-| 错误码 | 错误名称 | HTTP 状态码 | 描述 | 可重试 |
-|--------|---------|------------|------|--------|
-| 1100 | BIO_TOO_SHORT | 400 | Bio 文本过短 (最少10字符) | ❌ |
-| 1101 | BIO_TOO_LONG | 400 | Bio 文本过长 (最多500字符) | ❌ |
-| 1102 | BIO_INVALID_FORMAT | 400 | Bio 包含非法字符或格式 | ❌ |
-| 1150 | BIO_GENERATION_FAILED | 500 | Bio 重写生成失败 | ✅ |
+| Code | Name | HTTP Status | Description | Retryable |
+|------|------|-------------|-------------|-----------|
+| 1100 | BIO_TOO_SHORT | 400 | Bio text too short (min 10 chars) | No |
+| 1101 | BIO_TOO_LONG | 400 | Bio text too long (max 500 chars) | No |
+| 1102 | BIO_INVALID_FORMAT | 400 | Bio contains invalid characters or format | No |
+| 1150 | BIO_GENERATION_FAILED | 500 | Bio rewrite generation failed | Yes |
 
-### Photo 相关错误 (2000-2099)
+### Photo Errors (2000-2099)
 
-| 错误码 | 错误名称 | HTTP 状态码 | 描述 | 可重试 |
-|--------|---------|------------|------|--------|
-| 2000 | PHOTO_INVALID_URL | 400 | 照片 URL 格式无效 | ❌ |
-| 2001 | PHOTO_TOO_FEW | 400 | 照片数量不足 (最少2张) | ❌ |
-| 2002 | PHOTO_TOO_MANY | 400 | 照片数量过多 (最多10张) | ❌ |
-| 2050 | PHOTO_DOWNLOAD_FAILED | 400 | 照片下载失败 | ✅ |
-| 2051 | PHOTO_ANALYSIS_FAILED | 500 | 照片分析失败 | ✅ |
+| Code | Name | HTTP Status | Description | Retryable |
+|------|------|-------------|-------------|-----------|
+| 2000 | PHOTO_INVALID_URL | 400 | Invalid photo URL format | No |
+| 2001 | PHOTO_TOO_FEW | 400 | Not enough photos (min 2) | No |
+| 2002 | PHOTO_TOO_MANY | 400 | Too many photos (max 10) | No |
+| 2050 | PHOTO_DOWNLOAD_FAILED | 400 | Photo download failed | Yes |
+| 2051 | PHOTO_ANALYSIS_FAILED | 500 | Photo analysis failed | Yes |
 
-### Conversation 相关错误 (3000-3099)
+### Conversation Errors (3000-3099)
 
-| 错误码 | 错误名称 | HTTP 状态码 | 描述 | 可重试 |
-|--------|---------|------------|------|--------|
-| 3000 | CONV_INVALID_INPUT | 400 | 对话输入无效 | ❌ |
-| 3001 | CONV_CONTEXT_TOO_LONG | 400 | 上下文信息过长 | ❌ |
-| 3050 | CONV_GENERATION_FAILED | 500 | 对话开场白生成失败 | ✅ |
+| Code | Name | HTTP Status | Description | Retryable |
+|------|------|-------------|-------------|-----------|
+| 3000 | CONV_INVALID_INPUT | 400 | Invalid conversation input | No |
+| 3001 | CONV_CONTEXT_TOO_LONG | 400 | Context too long | No |
+| 3050 | CONV_GENERATION_FAILED | 500 | Conversation starter generation failed | Yes |
 
-### Claude API 相关错误 (4000-4099)
+### Claude API Errors (4000-4099)
 
-| 错误码 | 错误名称 | HTTP 状态码 | 描述 | 可重试 |
-|--------|---------|------------|------|--------|
-| 4000 | CLAUDE_API_KEY_MISSING | 500 | Claude API 密钥未配置 | ❌ |
-| 4001 | CLAUDE_API_KEY_INVALID | 401 | Claude API 密钥无效 | ❌ |
-| 4002 | CLAUDE_RATE_LIMIT | 429 | Claude API 速率限制 | ✅ |
-| 4003 | CLAUDE_QUOTA_EXCEEDED | 402 | Claude API 配额超限 | ❌ |
-| 4004 | CLAUDE_INVALID_REQUEST | 400 | Claude API 请求无效 | ❌ |
-| 4005 | CLAUDE_TIMEOUT | 408 | Claude API 请求超时 | ✅ |
-| 4006 | CLAUDE_OVERLOADED | 503 | Claude API 服务过载 | ✅ |
-| 4007 | CLAUDE_SERVER_ERROR | 500 | Claude API 服务器错误 | ✅ |
-| 4008 | CLAUDE_CONNECTION_ERROR | 503 | Claude API 连接失败 | ✅ |
-| 4009 | CLAUDE_RESPONSE_PARSE_ERROR | 500 | Claude API 响应解析失败 | ❌ |
+| Code | Name | HTTP Status | Description | Retryable |
+|------|------|-------------|-------------|-----------|
+| 4000 | CLAUDE_API_KEY_MISSING | 500 | Claude API key not configured | No |
+| 4001 | CLAUDE_API_KEY_INVALID | 401 | Claude API key invalid | No |
+| 4002 | CLAUDE_RATE_LIMIT | 429 | Claude API rate limit exceeded | Yes |
+| 4003 | CLAUDE_QUOTA_EXCEEDED | 402 | Claude API quota exceeded | No |
+| 4004 | CLAUDE_INVALID_REQUEST | 400 | Claude API invalid request | No |
+| 4005 | CLAUDE_TIMEOUT | 408 | Claude API request timeout | Yes |
+| 4006 | CLAUDE_OVERLOADED | 503 | Claude API service overloaded | Yes |
+| 4007 | CLAUDE_SERVER_ERROR | 500 | Claude API server error | Yes |
+| 4008 | CLAUDE_CONNECTION_ERROR | 503 | Claude API connection failed | Yes |
+| 4009 | CLAUDE_RESPONSE_PARSE_ERROR | 500 | Claude API response parse failed | No |
 
-### 系统错误 (9000-9099)
+### System Errors (9000-9099)
 
-| 错误码 | 错误名称 | HTTP 状态码 | 描述 | 可重试 |
-|--------|---------|------------|------|--------|
-| 9000 | SYSTEM_ERROR | 500 | 内部系统错误 | ❌ |
-| 9001 | DATABASE_ERROR | 500 | 数据库操作失败 | ❌ |
-| 9002 | FILE_UPLOAD_SIZE_EXCEEDED | 413 | 文件上传大小超限 | ❌ |
-| 9003 | EXTERNAL_SERVICE_ERROR | 503 | 外部服务不可用 | ✅ |
-| 9004 | RETRY_EXHAUSTED | 503 | 重试次数已用尽 | ❌ |
+| Code | Name | HTTP Status | Description | Retryable |
+|------|------|-------------|-------------|-----------|
+| 9000 | SYSTEM_ERROR | 500 | Internal system error | No |
+| 9001 | DATABASE_ERROR | 500 | Database operation failed | No |
+| 9002 | FILE_UPLOAD_SIZE_EXCEEDED | 413 | File upload size exceeded | No |
+| 9003 | EXTERNAL_SERVICE_ERROR | 503 | External service unavailable | Yes |
+| 9004 | RETRY_EXHAUSTED | 503 | Retry attempts exhausted | No |
 
-## 重试机制
+## Retry Mechanism
 
-### Claude API 重试策略
+### Claude API Retry Policy
 
-**自动重试的错误码:**
-- `4002` CLAUDE_RATE_LIMIT (速率限制)
-- `4005` CLAUDE_TIMEOUT (请求超时)
-- `4006` CLAUDE_OVERLOADED (服务过载)
-- `4007` CLAUDE_SERVER_ERROR (服务器错误)
-- `4008` CLAUDE_CONNECTION_ERROR (连接错误)
+**Auto-retried error codes:**
+- `4002` CLAUDE_RATE_LIMIT (rate limited)
+- `4005` CLAUDE_TIMEOUT (request timeout)
+- `4006` CLAUDE_OVERLOADED (service overloaded)
+- `4007` CLAUDE_SERVER_ERROR (server error)
+- `4008` CLAUDE_CONNECTION_ERROR (connection error)
 
-**重试配置:**
-- 最大重试次数: 3 次
-- 初始延迟: 1 秒
-- 延迟倍数: 2 (指数退避)
-- 最大延迟: 10 秒
+**Retry configuration:**
+- Max retry attempts: 3
+- Initial delay: 1 second
+- Delay multiplier: 2 (exponential backoff)
+- Max delay: 10 seconds
 
-**重试时间表:**
-- 第 1 次重试: 1 秒后
-- 第 2 次重试: 2 秒后
-- 第 3 次重试: 4 秒后
+**Retry schedule:**
+- 1st retry: after 1 second
+- 2nd retry: after 2 seconds
+- 3rd retry: after 4 seconds
 
-### 使用示例
+### Usage Examples
 
-#### 1. 抛出业务异常
+#### 1. Throw a business exception
 
 ```java
-// 参数验证失败
+// Validation failure
 if (bioText.length() < 10) {
     throw new BusinessException(ErrorCode.BIO_TOO_SHORT);
 }
 
-// 自定义错误消息
+// Custom error message
 if (photos.size() > 10) {
     throw new BusinessException(
         ErrorCode.PHOTO_TOO_MANY,
@@ -127,10 +127,10 @@ if (photos.size() > 10) {
 }
 ```
 
-#### 2. 抛出 Claude API 异常
+#### 2. Throw a Claude API exception
 
 ```java
-// 根据 HTTP 状态码创建异常
+// Create exception from HTTP status code
 catch (HttpClientErrorException e) {
     throw ClaudeApiException.fromHttpStatus(
         e.getStatusCode().value(),
@@ -138,13 +138,13 @@ catch (HttpClientErrorException e) {
     );
 }
 
-// 直接抛出特定错误
+// Throw a specific error directly
 if (apiKey == null || apiKey.isEmpty()) {
     throw new ClaudeApiException(ErrorCode.CLAUDE_API_KEY_MISSING);
 }
 ```
 
-#### 3. 使用重试模板
+#### 3. Use RetryTemplate
 
 ```java
 @Service
@@ -155,15 +155,15 @@ public class ClaudeApiService {
 
     public String callClaudeApi(String prompt) {
         return claudeApiRetryTemplate.execute(context -> {
-            // 调用 Claude API 的代码
-            // 如果抛出可重试的 ClaudeApiException，会自动重试
+            // Call Claude API
+            // Retryable ClaudeApiExceptions are automatically retried
             return makeApiCall(prompt);
         });
     }
 }
 ```
 
-#### 4. 使用注解方式重试
+#### 4. Use annotation-based retry
 
 ```java
 @Service
@@ -175,13 +175,13 @@ public class BioService {
         backoff = @Backoff(delay = 1000, multiplier = 2, maxDelay = 10000)
     )
     public BioRewriteResponse rewriteBio(BioRewriteRequest request) {
-        // 方法会在抛出 ClaudeApiException 时自动重试
+        // Automatically retries on ClaudeApiException
         return claudeApiClient.rewriteBio(request);
     }
 
     @Recover
     public BioRewriteResponse recover(ClaudeApiException e, BioRewriteRequest request) {
-        // 重试耗尽后的降级处理
+        // Fallback after retries exhausted
         log.error("Failed to rewrite bio after retries", e);
         throw new BusinessException(ErrorCode.RETRY_EXHAUSTED,
             "Failed to generate bio rewrite after multiple attempts");
@@ -189,14 +189,14 @@ public class BioService {
 }
 ```
 
-## 前端处理建议
+## Frontend Handling Recommendations
 
-### 1. 根据 retryable 字段决定是否重试
+### 1. Decide whether to retry based on the retryable field
 
 ```javascript
 async function callApi() {
   try {
-    const response = await fetch('/api/v1/profile/bio/rewrite', {
+    const response = await fetch('/api/profile/rewrite-bio', {
       method: 'POST',
       body: JSON.stringify(data)
     });
@@ -204,7 +204,7 @@ async function callApi() {
     if (!response.ok) {
       const error = await response.json();
 
-      // 如果错误可重试，显示重试按钮
+      // Show retry button if error is retryable
       if (error.retryable) {
         showRetryButton();
       } else {
@@ -212,51 +212,51 @@ async function callApi() {
       }
     }
   } catch (error) {
-    // 网络错误，显示重试按钮
+    // Network error, show retry button
     showRetryButton();
   }
 }
 ```
 
-### 2. 根据错误码显示友好提示
+### 2. Display user-friendly messages based on error code
 
 ```javascript
 const ERROR_MESSAGES = {
-  1100: '您的个人简介太短了，请至少输入 10 个字符',
-  1101: '您的个人简介太长了，请不要超过 500 个字符',
-  2001: '请至少上传 2 张照片才能进行排序',
-  4002: 'AI 服务繁忙，请稍后再试',
-  4003: 'AI 服务配额已用完，请联系管理员'
+  1100: 'Your bio is too short. Please enter at least 10 characters.',
+  1101: 'Your bio is too long. Please keep it under 500 characters.',
+  2001: 'Please upload at least 2 photos for ranking.',
+  4002: 'AI service is busy. Please try again later.',
+  4003: 'AI service quota exceeded. Please contact the administrator.'
 };
 
 function showUserFriendlyError(errorCode) {
-  const message = ERROR_MESSAGES[errorCode] || '操作失败，请重试';
+  const message = ERROR_MESSAGES[errorCode] || 'Operation failed. Please try again.';
   alert(message);
 }
 ```
 
-## 监控和告警
+## Monitoring and Alerting
 
-### 需要监控的错误码
+### Error codes to monitor
 
-**高优先级 (立即告警):**
+**High priority (immediate alert):**
 - `4000` CLAUDE_API_KEY_MISSING
 - `4001` CLAUDE_API_KEY_INVALID
 - `4003` CLAUDE_QUOTA_EXCEEDED
 - `9000` SYSTEM_ERROR
 - `9001` DATABASE_ERROR
 
-**中优先级 (频率告警):**
-- `4002` CLAUDE_RATE_LIMIT (每小时 > 10次)
-- `4005` CLAUDE_TIMEOUT (每小时 > 20次)
-- `4006` CLAUDE_OVERLOADED (每小时 > 10次)
+**Medium priority (frequency-based alert):**
+- `4002` CLAUDE_RATE_LIMIT (> 10 per hour)
+- `4005` CLAUDE_TIMEOUT (> 20 per hour)
+- `4006` CLAUDE_OVERLOADED (> 10 per hour)
 
-**低优先级 (仅记录):**
-- 业务验证错误 (1xxx, 2xxx, 3xxx)
-- 客户端参数错误 (1000-1004)
+**Low priority (log only):**
+- Business validation errors (1xxx, 2xxx, 3xxx)
+- Client parameter errors (1000-1004)
 
-## 版本历史
+## Version History
 
-| 版本 | 日期 | 变更说明 |
-|------|------|---------|
-| 1.0.0 | 2025-01-15 | 初始版本，定义所有错误码 |
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0.0 | 2026-03-15 | Initial version, defined all error codes |

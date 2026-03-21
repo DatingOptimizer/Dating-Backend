@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#FFF8F0">
+<title>ProfileGlow - Backend API Docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FFF8F0;
+    --surface: #FFFFFF;
+    --border: #F0E6D8;
+    --text: #3D2C1E;
+    --text-muted: #8B7355;
+    --accent: #E8836B;
+    --accent-hover: #D4725B;
+    --golden: #D4A55A;
+    --lavender: #B49ADB;
+    --mint: #6BBFA3;
+    --blush: #E8A0B4;
+    --green: #00A544;
+    --orange: #D4A55A;
+    --red: #E45A50;
+    --code-bg: #FDF6EE;
+    --badge-get: #6BBFA3;
+    --badge-post: #B49ADB;
+    --badge-delete: #E8836B;
+    --hero-from: #FFF0E6;
+    --hero-to: #F5E6F0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    padding: 60px 20px 40px;
+    background: linear-gradient(135deg, var(--hero-from) 0%, #FFF8F0 40%, var(--hero-to) 100%);
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; top: -60%; left: -20%; width: 140%; height: 200%;
+    background: radial-gradient(ellipse at 20% 50%, rgba(180,154,219,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 50%, rgba(232,131,107,0.08) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .hero h1 { font-size: 2.4rem; margin-bottom: 8px; font-weight: 800; color: var(--text); position: relative; }
+  .hero h1 span { font-family: 'Caveat', cursive; font-size: 2.8rem; color: var(--accent); }
+  .hero .subtitle { color: var(--text-muted); font-size: 1.1rem; margin-bottom: 16px; position: relative; }
+  .hero .team { color: var(--text-muted); font-size: 0.9rem; position: relative; }
+  .live-links { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; position: relative; }
+  .live-links a {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 18px; border-radius: 20px; text-decoration: none;
+    font-size: 0.9rem; font-weight: 600; transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .live-links .frontend { background: var(--lavender); color: #fff; }
+  .live-links .backend { background: var(--mint); color: #fff; }
+  .live-links a:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+
+  /* Hero stats */
+  .hero-stats {
+    display: flex; justify-content: center; gap: 32px; margin-top: 28px;
+    position: relative; flex-wrap: wrap;
+  }
+  .hero-stat {
+    text-align: center;
+  }
+  .hero-stat .stat-num {
+    font-size: 2rem; font-weight: 800; line-height: 1;
+    background: linear-gradient(135deg, var(--accent), var(--lavender));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-stat .stat-label {
+    font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; font-weight: 600;
+  }
+
+  /* Layout */
+  .container { max-width: 960px; margin: 0 auto; padding: 30px 20px 60px; }
+
+  /* Nav tabs */
+  .nav-tabs {
+    display: flex; gap: 4px; border-bottom: 2px solid var(--border);
+    margin-bottom: 30px; overflow-x: auto; padding-bottom: 0;
+  }
+  .nav-tab {
+    padding: 10px 18px; background: none; border: none;
+    color: var(--text-muted); font-size: 0.9rem; cursor: pointer;
+    border-bottom: 2px solid transparent; transition: all 0.2s;
+    white-space: nowrap; font-family: inherit; font-weight: 600;
+    margin-bottom: -2px;
+  }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fadeIn 0.3s; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  /* Section */
+  .section { margin-bottom: 28px; }
+  .section h2 { font-size: 1.4rem; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .section h3 { font-size: 1.1rem; margin: 18px 0 10px; color: var(--accent); }
+  .section p, .section li { color: var(--text-muted); }
+  .section ul { padding-left: 20px; }
+  .section li { margin-bottom: 6px; }
+  .section li strong { color: var(--text); }
+
+  /* ===== FEATURE CARDS ===== */
+  .feature-cards {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 20px 0;
+  }
+  .feature-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 24px 18px; text-align: center;
+    transition: all 0.25s; box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    position: relative; overflow: hidden;
+  }
+  .feature-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    border-radius: 16px 16px 0 0;
+  }
+  .feature-card:nth-child(1)::before { background: linear-gradient(90deg, var(--accent), var(--blush)); }
+  .feature-card:nth-child(2)::before { background: linear-gradient(90deg, var(--lavender), var(--mint)); }
+  .feature-card:nth-child(3)::before { background: linear-gradient(90deg, var(--golden), var(--accent)); }
+  .feature-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+  .feature-card .fc-icon {
+    width: 52px; height: 52px; border-radius: 14px; margin: 0 auto 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+  }
+  .feature-card:nth-child(1) .fc-icon { background: rgba(232,131,107,0.12); }
+  .feature-card:nth-child(2) .fc-icon { background: rgba(180,154,219,0.12); }
+  .feature-card:nth-child(3) .fc-icon { background: rgba(212,165,90,0.12); }
+  .feature-card .fc-title { font-weight: 700; font-size: 1rem; margin-bottom: 6px; }
+  .feature-card .fc-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+  @media (max-width: 640px) {
+    .feature-cards { grid-template-columns: 1fr; }
+  }
+
+  /* ===== ARCHITECTURE DIAGRAM ===== */
+  .arch-diagram {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px; margin: 20px 0; overflow-x: auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+  .arch-diagram svg { display: block; margin: 0 auto; }
+  .arch-diagram text { font-family: 'Nunito', sans-serif; }
+
+  /* ===== ER DIAGRAM ===== */
+  .er-diagram {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px; margin: 20px 0; overflow-x: auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+  .er-diagram svg { display: block; margin: 0 auto; }
+  .er-diagram text { font-family: 'Nunito', sans-serif; }
+
+  /* ===== API FLOW DIAGRAM ===== */
+  .api-flow {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px; margin: 20px 0; overflow-x: auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+  .api-flow svg { display: block; margin: 0 auto; }
+  .api-flow text { font-family: 'Nunito', sans-serif; }
+
+  /* ===== DEPLOY PIPELINE ===== */
+  .deploy-pipeline {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px; margin: 20px 0; overflow-x: auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+  .deploy-pipeline svg { display: block; margin: 0 auto; }
+  .deploy-pipeline text { font-family: 'Nunito', sans-serif; }
+
+  /* ===== PROGRESS RING ===== */
+  .progress-overview {
+    display: flex; align-items: center; gap: 32px; margin-bottom: 28px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+  .progress-ring-wrap { flex-shrink: 0; position: relative; width: 120px; height: 120px; }
+  .progress-ring-wrap svg { transform: rotate(-90deg); }
+  .progress-ring-label {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  .progress-ring-label .prl-num { font-size: 1.8rem; font-weight: 800; color: var(--mint); line-height: 1; }
+  .progress-ring-label .prl-text { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; }
+  .progress-stats { flex: 1; }
+  .progress-stats .ps-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; }
+  .progress-stat-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+  }
+  .progress-stat-row .psr-bar-wrap {
+    flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;
+  }
+  .progress-stat-row .psr-bar {
+    height: 100%; border-radius: 4px; transition: width 1s ease;
+  }
+  .progress-stat-row .psr-label { font-size: 0.8rem; color: var(--text-muted); width: 90px; flex-shrink: 0; font-weight: 600; }
+  .progress-stat-row .psr-pct { font-size: 0.8rem; color: var(--text); font-weight: 700; width: 40px; text-align: right; }
+  @media (max-width: 640px) {
+    .progress-overview { flex-direction: column; text-align: center; }
+  }
+
+  /* Collapsible */
+  .collapsible {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .collapsible-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 18px; cursor: pointer; user-select: none;
+    transition: background 0.2s;
+  }
+  .collapsible-header:hover { background: rgba(232,131,107,0.06); }
+  .collapsible-header .arrow {
+    transition: transform 0.2s; font-size: 0.7rem; color: var(--text-muted);
+  }
+  .collapsible.open .arrow { transform: rotate(90deg); }
+  .collapsible-header .method-badge {
+    padding: 2px 10px; border-radius: 12px; font-size: 0.75rem;
+    font-weight: 700; color: #fff; letter-spacing: 0.5px;
+  }
+  .badge-get { background: var(--badge-get); }
+  .badge-post { background: var(--badge-post); }
+  .badge-delete { background: var(--badge-delete); }
+  .collapsible-header .endpoint-path { font-family: 'SF Mono', Monaco, monospace; font-size: 0.9rem; color: var(--text); }
+  .collapsible-header .endpoint-desc { color: var(--text-muted); font-size: 0.85rem; margin-left: auto; }
+  .collapsible-body { display: none; padding: 0 18px 18px; }
+  .collapsible.open .collapsible-body { display: block; }
+
+  /* Code blocks */
+  .code-block {
+    position: relative;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin: 10px 0;
+    overflow: hidden;
+  }
+  .code-block .lang-label {
+    position: absolute; top: 6px; left: 12px;
+    font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .code-block .copy-btn {
+    position: absolute; top: 6px; right: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text-muted); padding: 3px 10px; border-radius: 8px;
+    font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
+    font-family: inherit;
+  }
+  .code-block .copy-btn:hover { color: var(--text); border-color: var(--text-muted); }
+  .code-block .copy-btn.copied { color: var(--green); border-color: var(--green); }
+  .code-block pre {
+    padding: 30px 16px 14px; overflow-x: auto;
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+    font-size: 0.85rem; line-height: 1.5;
+  }
+  .code-block code { color: var(--text); }
+
+  /* Inline code */
+  code.inline {
+    background: rgba(212,165,90,0.15); padding: 2px 6px;
+    border-radius: 6px; font-size: 0.85em;
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+    color: var(--text);
+  }
+
+  /* Tables */
+  table {
+    width: 100%; border-collapse: collapse; margin: 12px 0;
+    font-size: 0.9rem;
+  }
+  th, td {
+    text-align: left; padding: 10px 14px;
+    border: 1px solid var(--border);
+  }
+  th { background: var(--surface); color: var(--text); font-weight: 600; }
+  td { color: var(--text-muted); }
+  td code { color: var(--accent); background: rgba(232,131,107,0.1); padding: 1px 5px; border-radius: 4px; font-size: 0.85em; }
+
+  /* Tech stack badges */
+  .tech-grid { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0; }
+  .tech-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 8px 14px; border-radius: 20px; font-size: 0.85rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    font-weight: 600;
+  }
+  .tech-badge .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-java { background: #f89820; }
+  .dot-spring { background: #6db33f; }
+  .dot-pg { background: #336791; }
+  .dot-supa { background: #3ecf8e; }
+  .dot-claude { background: #d4a574; }
+  .dot-maven { background: #c71a36; }
+
+  /* Timeline / Progress */
+  .timeline { margin: 16px 0; }
+  .timeline-item {
+    display: flex; gap: 14px; padding: 16px 0;
+    border-left: 3px solid var(--border); margin-left: 10px; padding-left: 24px;
+    position: relative;
+  }
+  .timeline-item::before {
+    content: ''; position: absolute; left: -9px; top: 20px;
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 3px solid var(--border); background: var(--bg);
+    transition: all 0.3s;
+  }
+  .timeline-item.done { border-left-color: var(--mint); }
+  .timeline-item.done::before { background: var(--mint); border-color: var(--mint); box-shadow: 0 0 0 4px rgba(107,191,163,0.2); }
+  .timeline-item .tl-content { flex: 1; }
+  .timeline-item .tl-title { font-weight: 700; margin-bottom: 4px; color: var(--text); font-size: 1rem; }
+  .timeline-item .tl-tasks { color: var(--text-muted); font-size: 0.85rem; }
+  .timeline-item .tl-tasks .done-task { color: var(--mint); padding: 2px 0; }
+
+  /* Project tree */
+  .tree { font-family: 'SF Mono', Monaco, monospace; font-size: 0.85rem; line-height: 1.8; }
+  .tree-item { padding-left: 20px; cursor: default; }
+  .tree-item .folder { color: var(--accent); }
+  .tree-item .comment { color: var(--text-muted); }
+
+  /* Alert / Note */
+  .note {
+    background: rgba(212,165,90,0.1);
+    border: 1px solid rgba(212,165,90,0.25);
+    border-left: 3px solid var(--golden);
+    padding: 12px 16px; border-radius: 10px;
+    font-size: 0.9rem; color: var(--text-muted);
+    margin: 12px 0;
+  }
+  .note strong { color: var(--golden); }
+
+  /* Steps */
+  .step {
+    display: flex; gap: 14px; margin-bottom: 16px;
+  }
+  .step-num {
+    flex-shrink: 0; width: 28px; height: 28px;
+    background: var(--accent); color: #fff; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.85rem;
+  }
+  .step-body { flex: 1; padding-top: 3px; }
+  .step-body p { color: var(--text-muted); }
+  .step-body a { color: var(--accent); }
+
+  /* API tester */
+  .api-tester {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px; margin-top: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .api-tester h3 { color: var(--text); margin-bottom: 14px; font-size: 1rem; }
+  .api-tester label { display: block; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 4px; font-weight: 600; }
+  .api-tester input, .api-tester select, .api-tester textarea {
+    width: 100%; padding: 8px 12px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text); font-size: 0.9rem; margin-bottom: 12px;
+    font-family: inherit;
+  }
+  .api-tester input:focus, .api-tester select:focus, .api-tester textarea:focus {
+    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,131,107,0.15);
+  }
+  .api-tester textarea { font-family: 'SF Mono', Monaco, monospace; min-height: 80px; resize: vertical; }
+  .api-tester button {
+    background: var(--accent); color: #fff; border: none;
+    padding: 9px 24px; border-radius: 20px; font-weight: 700;
+    cursor: pointer; font-size: 0.9rem; transition: all 0.2s;
+    font-family: inherit;
+  }
+  .api-tester button:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 2px 8px rgba(232,131,107,0.3); }
+  .api-tester button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .api-tester .response-area {
+    margin-top: 14px; background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px; display: none;
+    font-family: 'SF Mono', Monaco, monospace; font-size: 0.85rem;
+    max-height: 300px; overflow: auto; white-space: pre-wrap;
+  }
+  .api-tester .response-area.visible { display: block; }
+  .api-tester .status-badge { font-size: 0.8rem; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
+  .status-ok { background: rgba(107,191,163,0.2); color: var(--mint); }
+  .status-err { background: rgba(228,90,80,0.15); color: var(--red); }
+
+  .input-row { display: flex; gap: 12px; }
+  .input-row > div { flex: 1; }
+
+  /* Footer */
+  footer {
+    text-align: center; padding: 30px 20px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted); font-size: 0.85rem;
+  }
+
+  /* SVG animations */
+  @keyframes dashDraw { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } }
+  @keyframes nodeAppear { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+  @keyframes progressFill {
+    from { stroke-dashoffset: 314; }
+    to { stroke-dashoffset: 0; }
+  }
+  .svg-animated rect, .svg-animated circle { animation: nodeAppear 0.5s ease-out both; }
+  .svg-animated .delay1 { animation-delay: 0.1s; }
+  .svg-animated .delay2 { animation-delay: 0.2s; }
+  .svg-animated .delay3 { animation-delay: 0.3s; }
+  .svg-animated .delay4 { animation-delay: 0.4s; }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 1.6rem; }
+    .hero h1 span { font-size: 1.9rem; }
+    .hero-stats { gap: 20px; }
+    .hero-stat .stat-num { font-size: 1.5rem; }
+    .collapsible-header .endpoint-desc { display: none; }
+    .input-row { flex-direction: column; gap: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <h1><span>ProfileGlow</span> Backend API</h1>
+  <p class="subtitle">Spring Boot REST API &middot; Claude AI &middot; Supabase</p>
+  <p class="team">CS 5500 Group 4 &mdash; Yihan Wang, Kaichen Qu, Xujing Hui</p>
+  <div class="live-links">
+    <a class="frontend" href="https://dating-optimizer.netlify.app" target="_blank">&#9672; Frontend App</a>
+    <a class="backend" href="https://dating-optimizer-backend.onrender.com/api/health" target="_blank">&#9672; Backend API</a>
+  </div>
+  <div class="hero-stats">
+    <div class="hero-stat"><div class="stat-num">9</div><div class="stat-label">API Endpoints</div></div>
+    <div class="hero-stat"><div class="stat-num">3</div><div class="stat-label">AI Features</div></div>
+    <div class="hero-stat"><div class="stat-num">5</div><div class="stat-label">Tone Options</div></div>
+    <div class="hero-stat"><div class="stat-num">2</div><div class="stat-label">DB Tables</div></div>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="container">
+
+  <!-- Tabs -->
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-tab="overview">Overview</button>
+    <button class="nav-tab" data-tab="setup">Setup</button>
+    <button class="nav-tab" data-tab="api">API Endpoints</button>
+    <button class="nav-tab" data-tab="tester">API Tester</button>
+    <button class="nav-tab" data-tab="database">Database</button>
+    <button class="nav-tab" data-tab="dev">Development</button>
+    <button class="nav-tab" data-tab="deploy">Deployment</button>
+    <button class="nav-tab" data-tab="progress">Progress</button>
+  </div>
+
+  <!-- ===== OVERVIEW ===== -->
+  <div class="tab-content active" id="tab-overview">
+    <div class="section">
+      <h2>Overview</h2>
+      <p>Spring Boot REST API backend for the AI Dating Profile Optimizer application. This service uses Claude AI API to optimize dating profiles by rewriting bios, ranking photos, and generating conversation starters.</p>
+
+      <!-- Feature Cards -->
+      <div class="feature-cards">
+        <div class="feature-card">
+          <div class="fc-icon">&#9997;&#65039;</div>
+          <div class="fc-title">Bio Rewriting</div>
+          <div class="fc-desc">AI-powered bio optimization with 5 customizable tones: casual, bold, polite, humorous, warm</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">&#128247;</div>
+          <div class="fc-title">Photo Ranking</div>
+          <div class="fc-desc">Claude Vision API analyzes and ranks profile photos with detailed feedback</div>
+        </div>
+        <div class="feature-card">
+          <div class="fc-icon">&#128172;</div>
+          <div class="fc-title">Conversation Starters</div>
+          <div class="fc-desc">Generate personalized ice-breakers based on profile bios and selected tone</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Architecture Diagram -->
+    <div class="section">
+      <h2>System Architecture</h2>
+      <div class="arch-diagram">
+        <svg class="svg-animated" width="820" height="320" viewBox="0 0 820 320">
+          <!-- Background grid dots -->
+          <pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse">
+            <circle cx="10" cy="10" r="0.8" fill="#E0D5C8" opacity="0.5"/>
+          </pattern>
+          <rect width="820" height="320" fill="url(#dots)" rx="12"/>
+
+          <!-- User / Browser -->
+          <rect class="delay1" x="20" y="120" width="120" height="80" rx="14" fill="#FFF" stroke="#E8836B" stroke-width="2"/>
+          <text x="80" y="155" text-anchor="middle" font-size="13" font-weight="700" fill="#3D2C1E">User</text>
+          <text x="80" y="175" text-anchor="middle" font-size="10" fill="#8B7355">Browser</text>
+
+          <!-- Arrow: User -> Frontend -->
+          <line x1="140" y1="160" x2="185" y2="160" stroke="#E8836B" stroke-width="2" marker-end="url(#arrowAccent)"/>
+
+          <!-- Frontend (React) -->
+          <rect class="delay2" x="190" y="105" width="140" height="110" rx="14" fill="#F3EDFF" stroke="#B49ADB" stroke-width="2"/>
+          <text x="260" y="145" text-anchor="middle" font-size="13" font-weight="700" fill="#3D2C1E">Frontend</text>
+          <text x="260" y="163" text-anchor="middle" font-size="10" fill="#8B7355">React / Next.js</text>
+          <text x="260" y="180" text-anchor="middle" font-size="9" fill="#B49ADB" font-weight="600">Netlify</text>
+
+          <!-- Arrow: Frontend -> Backend -->
+          <line x1="330" y1="160" x2="385" y2="160" stroke="#B49ADB" stroke-width="2" marker-end="url(#arrowLav)"/>
+          <text x="358" y="150" text-anchor="middle" font-size="8" fill="#8B7355">REST API</text>
+
+          <!-- Backend (Spring Boot) -->
+          <rect class="delay3" x="390" y="80" width="160" height="160" rx="14" fill="#FFF5EE" stroke="#E8836B" stroke-width="2.5"/>
+          <text x="470" y="118" text-anchor="middle" font-size="14" font-weight="800" fill="#E8836B">Spring Boot</text>
+          <text x="470" y="138" text-anchor="middle" font-size="10" fill="#8B7355">Java 21 / Maven</text>
+          <!-- Inner layers -->
+          <rect x="405" y="150" width="130" height="22" rx="6" fill="rgba(232,131,107,0.1)" stroke="none"/>
+          <text x="470" y="165" text-anchor="middle" font-size="9" fill="#E8836B" font-weight="600">Controller Layer</text>
+          <rect x="405" y="177" width="130" height="22" rx="6" fill="rgba(180,154,219,0.1)" stroke="none"/>
+          <text x="470" y="192" text-anchor="middle" font-size="9" fill="#B49ADB" font-weight="600">Service Layer</text>
+          <rect x="405" y="204" width="130" height="22" rx="6" fill="rgba(107,191,163,0.1)" stroke="none"/>
+          <text x="470" y="219" text-anchor="middle" font-size="9" fill="#6BBFA3" font-weight="600">Repository Layer</text>
+
+          <!-- Arrow: Backend -> Claude -->
+          <line x1="550" y1="130" x2="620" y2="80" stroke="#D4A55A" stroke-width="2" marker-end="url(#arrowGold)"/>
+          <text x="600" y="95" text-anchor="middle" font-size="8" fill="#8B7355">Prompt</text>
+
+          <!-- Claude API -->
+          <rect class="delay4" x="625" y="30" width="160" height="80" rx="14" fill="#FFF9F0" stroke="#D4A55A" stroke-width="2"/>
+          <text x="705" y="62" text-anchor="middle" font-size="13" font-weight="700" fill="#3D2C1E">Claude API</text>
+          <text x="705" y="80" text-anchor="middle" font-size="10" fill="#8B7355">Anthropic AI</text>
+          <text x="705" y="96" text-anchor="middle" font-size="9" fill="#D4A55A" font-weight="600">Text + Vision</text>
+
+          <!-- Arrow: Backend -> Supabase -->
+          <line x1="550" y1="200" x2="620" y2="240" stroke="#6BBFA3" stroke-width="2" marker-end="url(#arrowMint)"/>
+          <text x="596" y="228" text-anchor="middle" font-size="8" fill="#8B7355">JDBC</text>
+
+          <!-- Supabase -->
+          <rect class="delay4" x="625" y="210" width="160" height="80" rx="14" fill="#EDFFF7" stroke="#6BBFA3" stroke-width="2"/>
+          <text x="705" y="242" text-anchor="middle" font-size="13" font-weight="700" fill="#3D2C1E">Supabase</text>
+          <text x="705" y="260" text-anchor="middle" font-size="10" fill="#8B7355">PostgreSQL + Auth</text>
+          <text x="705" y="276" text-anchor="middle" font-size="9" fill="#6BBFA3" font-weight="600">JWT / ES256</text>
+
+          <!-- Arrow markers -->
+          <defs>
+            <marker id="arrowAccent" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#E8836B"/></marker>
+            <marker id="arrowLav" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#B49ADB"/></marker>
+            <marker id="arrowGold" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#D4A55A"/></marker>
+            <marker id="arrowMint" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#6BBFA3"/></marker>
+          </defs>
+        </svg>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Tech Stack</h2>
+      <div class="tech-grid">
+        <div class="tech-badge"><span class="dot dot-spring"></span> Spring Boot 4.0.2</div>
+        <div class="tech-badge"><span class="dot dot-java"></span> Java 21</div>
+        <div class="tech-badge"><span class="dot dot-pg"></span> PostgreSQL</div>
+        <div class="tech-badge"><span class="dot dot-supa"></span> Supabase Auth + Spring Security</div>
+        <div class="tech-badge"><span class="dot dot-claude"></span> Claude API</div>
+        <div class="tech-badge"><span class="dot dot-maven"></span> Maven</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Project Structure</h2>
+      <div class="tree">
+        <div class="tree-item"><span class="folder">src/main/java/com/groupf/dating/</span></div>
+        <div class="tree-item">&ensp;&ensp;<span class="folder">common/</span> <span class="comment"># Constants and enums (ToneType, ApiConstants, AppConstants)</span></div>
+        <div class="tree-item">&ensp;&ensp;<span class="folder">config/</span> <span class="comment"># CORS, Security, RestClient, Jackson, Retry</span></div>
+        <div class="tree-item">&ensp;&ensp;<span class="folder">controller/</span> <span class="comment"># REST API endpoints</span></div>
+        <div class="tree-item">&ensp;&ensp;<span class="folder">dto/</span> <span class="comment"># Data Transfer Objects (request/response)</span></div>
+        <div class="tree-item">&ensp;&ensp;<span class="folder">exception/</span> <span class="comment"># Error codes, custom exceptions, global handler</span></div>
+        <div class="tree-item">&ensp;&ensp;<span class="folder">model/</span> <span class="comment"># JPA entities</span></div>
+        <div class="tree-item">&ensp;&ensp;<span class="folder">repository/</span> <span class="comment"># JPA repositories</span></div>
+        <div class="tree-item">&ensp;&ensp;<span class="folder">service/</span> <span class="comment"># Service interfaces</span></div>
+        <div class="tree-item">&ensp;&ensp;&ensp;&ensp;<span class="folder">impl/</span> <span class="comment"># Service implementations</span></div>
+        <div class="tree-item">&ensp;&ensp;<span class="folder">util/</span> <span class="comment"># PromptBuilder, StringListConverter, ImageUtil</span></div>
+        <div class="tree-item">&ensp;&ensp;DatingApplication.java</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SETUP ===== -->
+  <div class="tab-content" id="tab-setup">
+    <div class="section">
+      <h2>Prerequisites</h2>
+      <ul>
+        <li><strong>Java 21</strong> (recommended) or Java 17+</li>
+        <li><strong>Maven 3.9+</strong></li>
+        <li><strong>Supabase</strong> account + project (free tier works)</li>
+        <li><strong>Claude API Key</strong> from Anthropic</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>Setup Instructions</h2>
+
+      <h3>Step 1: Create a Supabase Project</h3>
+      <div class="step"><div class="step-num">1</div><div class="step-body"><p>Sign up at <a href="https://supabase.com" target="_blank">supabase.com</a> and create a new project</p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><p>Go to <strong>Settings &rarr; Database</strong> to find your connection string</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><p>Go to <strong>Settings &rarr; API</strong> to find your JWT secret and anon key</p></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><p>The <code class="inline">profile_requests</code> table is created automatically by Hibernate on first run</p></div></div>
+      <div class="step"><div class="step-num">5</div><div class="step-body"><p>Create the <code class="inline">saved_items</code> table manually in <strong>Supabase &rarr; SQL Editor</strong>:</p></div></div>
+
+      <div class="code-block">
+        <span class="lang-label">sql</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><code>CREATE TABLE IF NOT EXISTS saved_items (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    TEXT NOT NULL,
+  type       TEXT NOT NULL CHECK (type IN ('BIO', 'STARTER')),
+  content    TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_saved_items_user_type
+  ON saved_items (user_id, type, created_at DESC);</code></pre>
+      </div>
+
+      <h3>Step 2: Get Claude API Key</h3>
+      <div class="step"><div class="step-num">1</div><div class="step-body"><p>Sign up at <a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a></p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><p>Navigate to API Keys section &rarr; Create a new API key</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><p>Copy the key (starts with <code class="inline">sk-ant-...</code>)</p></div></div>
+
+      <h3>Step 3: Configure Environment Variables</h3>
+      <p>Create a <code class="inline">.env</code> file in the project root:</p>
+      <div class="code-block">
+        <span class="lang-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><code># Claude API
+CLAUDE_API_KEY=sk-ant-your-api-key-here
+
+# CORS (for React frontend)
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+
+# Supabase PostgreSQL
+SUPABASE_DB_JDBC_URL=jdbc:postgresql://db.your-project-id.supabase.co:5432/postgres?sslmode=require
+SUPABASE_DB_USERNAME=postgres
+SUPABASE_DB_PASSWORD=your-db-password
+
+# Supabase Auth (Settings &rarr; API &rarr; JWT Secret)
+SUPABASE_JWT_SECRET=your-jwt-secret</code></pre>
+      </div>
+
+      <h3>Step 4: Run the Application</h3>
+      <div class="code-block">
+        <span class="lang-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><code># Clean and compile
+./mvnw clean compile
+
+# Run the application
+./mvnw spring-boot:run
+
+# Or package and run
+./mvnw clean package
+java -jar target/dating-0.0.1-SNAPSHOT.jar</code></pre>
+      </div>
+      <p>The API will start on <code class="inline">http://localhost:8080</code></p>
+    </div>
+  </div>
+
+  <!-- ===== API ENDPOINTS ===== -->
+  <div class="tab-content" id="tab-api">
+    <div class="section">
+      <h2>API Endpoints</h2>
+
+      <!-- API Flow Diagram -->
+      <div class="api-flow">
+        <svg class="svg-animated" width="780" height="140" viewBox="0 0 780 140">
+          <defs>
+            <marker id="afArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8B7355"/></marker>
+          </defs>
+          <!-- Client -->
+          <rect class="delay1" x="10" y="40" width="100" height="60" rx="12" fill="#FFF" stroke="#E8836B" stroke-width="2"/>
+          <text x="60" y="68" text-anchor="middle" font-size="12" font-weight="700" fill="#3D2C1E">Client</text>
+          <text x="60" y="84" text-anchor="middle" font-size="9" fill="#8B7355">HTTP Request</text>
+          <!-- Arrow -->
+          <line x1="110" y1="70" x2="148" y2="70" stroke="#8B7355" stroke-width="1.5" marker-end="url(#afArrow)"/>
+          <!-- JWT Auth -->
+          <rect class="delay2" x="152" y="40" width="110" height="60" rx="12" fill="#EDFFF7" stroke="#6BBFA3" stroke-width="2"/>
+          <text x="207" y="65" text-anchor="middle" font-size="11" font-weight="700" fill="#3D2C1E">JWT Auth</text>
+          <text x="207" y="81" text-anchor="middle" font-size="9" fill="#6BBFA3" font-weight="600">Spring Security</text>
+          <!-- Arrow -->
+          <line x1="262" y1="70" x2="300" y2="70" stroke="#8B7355" stroke-width="1.5" marker-end="url(#afArrow)"/>
+          <!-- Controller -->
+          <rect class="delay2" x="304" y="40" width="110" height="60" rx="12" fill="#FFF5EE" stroke="#E8836B" stroke-width="2"/>
+          <text x="359" y="65" text-anchor="middle" font-size="11" font-weight="700" fill="#3D2C1E">Controller</text>
+          <text x="359" y="81" text-anchor="middle" font-size="9" fill="#E8836B" font-weight="600">Validation</text>
+          <!-- Arrow -->
+          <line x1="414" y1="70" x2="452" y2="70" stroke="#8B7355" stroke-width="1.5" marker-end="url(#afArrow)"/>
+          <!-- Service -->
+          <rect class="delay3" x="456" y="40" width="110" height="60" rx="12" fill="#F3EDFF" stroke="#B49ADB" stroke-width="2"/>
+          <text x="511" y="65" text-anchor="middle" font-size="11" font-weight="700" fill="#3D2C1E">Service</text>
+          <text x="511" y="81" text-anchor="middle" font-size="9" fill="#B49ADB" font-weight="600">Business Logic</text>
+          <!-- Arrow up to Claude -->
+          <line x1="566" y1="55" x2="620" y2="32" stroke="#D4A55A" stroke-width="1.5" marker-end="url(#afArrow)"/>
+          <!-- Arrow down to DB -->
+          <line x1="566" y1="85" x2="620" y2="108" stroke="#6BBFA3" stroke-width="1.5" marker-end="url(#afArrow)"/>
+          <!-- Claude -->
+          <rect class="delay4" x="624" y="8" width="140" height="45" rx="10" fill="#FFF9F0" stroke="#D4A55A" stroke-width="2"/>
+          <text x="694" y="30" text-anchor="middle" font-size="11" font-weight="700" fill="#3D2C1E">Claude API</text>
+          <text x="694" y="44" text-anchor="middle" font-size="9" fill="#D4A55A" font-weight="600">AI Processing</text>
+          <!-- DB -->
+          <rect class="delay4" x="624" y="87" width="140" height="45" rx="10" fill="#EDFFF7" stroke="#6BBFA3" stroke-width="2"/>
+          <text x="694" y="109" text-anchor="middle" font-size="11" font-weight="700" fill="#3D2C1E">Supabase DB</text>
+          <text x="694" y="123" text-anchor="middle" font-size="9" fill="#6BBFA3" font-weight="600">PostgreSQL</text>
+        </svg>
+      </div>
+
+      <div class="note"><strong>Note:</strong> All protected endpoints require: <code class="inline">Authorization: Bearer &lt;supabase-jwt-token&gt;</code></div>
+
+      <!-- Health Check -->
+      <div class="collapsible">
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+          <span class="arrow">&#9654;</span>
+          <span class="method-badge badge-get">GET</span>
+          <span class="endpoint-path">/api/health</span>
+          <span class="endpoint-desc">Health check</span>
+        </div>
+        <div class="collapsible-body">
+          <p style="color:var(--text-muted);margin-bottom:10px;">Returns the service health status.</p>
+          <strong>Response:</strong>
+          <div class="code-block">
+            <span class="lang-label">json</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><code>{
+  "status": "UP",
+  "service": "Dating Profile Optimizer API",
+  "timestamp": "2026-02-10T18:30:00"
+}</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bio Rewrite -->
+      <div class="collapsible">
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+          <span class="arrow">&#9654;</span>
+          <span class="method-badge badge-post">POST</span>
+          <span class="endpoint-path">/api/profile/rewrite-bio</span>
+          <span class="endpoint-desc">Rewrite bio with AI</span>
+        </div>
+        <div class="collapsible-body">
+          <p style="color:var(--text-muted);margin-bottom:6px;">Rewrites a dating bio using Claude AI with a selected tone.</p>
+          <p style="color:var(--text-muted);margin-bottom:10px;">Valid tones: <code class="inline">casual</code> <code class="inline">bold</code> <code class="inline">polite</code> <code class="inline">humorous</code> <code class="inline">warm</code></p>
+          <strong>Request:</strong>
+          <div class="code-block">
+            <span class="lang-label">json</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><code>{
+  "bio": "I like traveling and pizza. Looking for someone fun.",
+  "tone": "casual"
+}</code></pre>
+          </div>
+          <strong>Response:</strong>
+          <div class="code-block">
+            <span class="lang-label">json</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><code>{
+  "originalBio": "I like traveling and pizza. Looking for someone fun.",
+  "rewrittenBios": [
+    "Adventure seeker with a passport full of stamps...",
+    "Globe-trotter who believes the best conversations...",
+    "Travel enthusiast and pizza connoisseur..."
+  ],
+  "tone": "casual"
+}</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conversation Starters -->
+      <div class="collapsible">
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+          <span class="arrow">&#9654;</span>
+          <span class="method-badge badge-post">POST</span>
+          <span class="endpoint-path">/api/profile/generate-openers</span>
+          <span class="endpoint-desc">Generate conversation starters</span>
+        </div>
+        <div class="collapsible-body">
+          <p style="color:var(--text-muted);margin-bottom:6px;">Generates conversation openers based on a bio and tone.</p>
+          <p style="color:var(--text-muted);margin-bottom:10px;">Valid tones: <code class="inline">casual</code> <code class="inline">bold</code> <code class="inline">polite</code> <code class="inline">humorous</code> <code class="inline">warm</code></p>
+          <strong>Request:</strong>
+          <div class="code-block">
+            <span class="lang-label">json</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><code>{
+  "bio": "I love hiking and photography",
+  "tone": "polite"
+}</code></pre>
+          </div>
+          <strong>Response:</strong>
+          <div class="code-block">
+            <span class="lang-label">json</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><code>{
+  "bio": "I love hiking and photography",
+  "starters": [
+    "I noticed you're into hiking too, what's been your favorite trail?",
+    "Your photography looks amazing! What camera do you use?",
+    "Fellow outdoor enthusiast here! Any hidden gem trails to recommend?"
+  ],
+  "tone": "polite"
+}</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Photo Ranking -->
+      <div class="collapsible">
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+          <span class="arrow">&#9654;</span>
+          <span class="method-badge badge-post">POST</span>
+          <span class="endpoint-path">/api/profile/rank-photos</span>
+          <span class="endpoint-desc">Rank profile photos</span>
+        </div>
+        <div class="collapsible-body">
+          <p style="color:var(--text-muted);margin-bottom:10px;">Upload photos as <code class="inline">multipart/form-data</code> to get AI-powered ranking and feedback.</p>
+          <strong>Request:</strong>
+          <div class="code-block">
+            <span class="lang-label">http</span>
+            <pre><code>POST /api/profile/rank-photos
+Content-Type: multipart/form-data
+
+photos: &lt;file1&gt;, &lt;file2&gt;, ...</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- History GET -->
+      <div class="collapsible">
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+          <span class="arrow">&#9654;</span>
+          <span class="method-badge badge-get">GET</span>
+          <span class="endpoint-path">/api/profile/history</span>
+          <span class="endpoint-desc">Get saved bios &amp; starters</span>
+        </div>
+        <div class="collapsible-body">
+          <p style="color:var(--text-muted);margin-bottom:10px;">Returns all saved bios and starters for the authenticated user.</p>
+          <strong>Response:</strong>
+          <div class="code-block">
+            <span class="lang-label">json</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><code>{
+  "savedBios": [
+    { "id": "uuid", "content": "...", "createdAt": "2026-03-18T10:00:00" }
+  ],
+  "savedStarters": [
+    { "id": "uuid", "content": "...", "createdAt": "2026-03-18T10:01:00" }
+  ]
+}</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save Bio -->
+      <div class="collapsible">
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+          <span class="arrow">&#9654;</span>
+          <span class="method-badge badge-post">POST</span>
+          <span class="endpoint-path">/api/profile/history/bio</span>
+          <span class="endpoint-desc">Save a bio</span>
+        </div>
+        <div class="collapsible-body">
+          <div class="code-block">
+            <span class="lang-label">json</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><code>{ "content": "Your saved bio text here" }</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delete Bio -->
+      <div class="collapsible">
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+          <span class="arrow">&#9654;</span>
+          <span class="method-badge badge-delete">DELETE</span>
+          <span class="endpoint-path">/api/profile/history/bio/{id}</span>
+          <span class="endpoint-desc">Delete a saved bio</span>
+        </div>
+        <div class="collapsible-body">
+          <p style="color:var(--text-muted);">Deletes a saved bio by its UUID.</p>
+        </div>
+      </div>
+
+      <!-- Save Starter -->
+      <div class="collapsible">
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+          <span class="arrow">&#9654;</span>
+          <span class="method-badge badge-post">POST</span>
+          <span class="endpoint-path">/api/profile/history/starter</span>
+          <span class="endpoint-desc">Save a starter</span>
+        </div>
+        <div class="collapsible-body">
+          <div class="code-block">
+            <span class="lang-label">json</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><code>{ "content": "Your saved starter text here" }</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delete Starter -->
+      <div class="collapsible">
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+          <span class="arrow">&#9654;</span>
+          <span class="method-badge badge-delete">DELETE</span>
+          <span class="endpoint-path">/api/profile/history/starter/{id}</span>
+          <span class="endpoint-desc">Delete a saved starter</span>
+        </div>
+        <div class="collapsible-body">
+          <p style="color:var(--text-muted);">Deletes a saved conversation starter by its UUID.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== API TESTER ===== -->
+  <div class="tab-content" id="tab-tester">
+    <div class="section">
+      <h2>Interactive API Tester</h2>
+      <p style="color:var(--text-muted);margin-bottom:16px;">Test the live API directly from this page.</p>
+
+      <div class="api-tester">
+        <h3>Bio Rewriter</h3>
+        <div class="input-row">
+          <div>
+            <label>API Base URL</label>
+            <input type="text" id="tester-base-url" value="https://dating-optimizer-backend.onrender.com" placeholder="https://dating-optimizer-backend.onrender.com">
+          </div>
+          <div>
+            <label>Tone</label>
+            <select id="tester-tone">
+              <option value="casual">Casual</option>
+              <option value="bold">Bold</option>
+              <option value="polite">Polite</option>
+              <option value="humorous">Humorous</option>
+              <option value="warm">Warm</option>
+            </select>
+          </div>
+        </div>
+        <label>Your Bio</label>
+        <textarea id="tester-bio" placeholder="Enter your dating bio here...">I like traveling and pizza. Looking for someone fun.</textarea>
+        <label>JWT Token (required for protected endpoints)</label>
+        <input type="text" id="tester-token" placeholder="Bearer token from Supabase Auth (optional for health check)">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button onclick="testHealth()">Test Health</button>
+          <button onclick="testBioRewrite()">Rewrite Bio</button>
+          <button onclick="testOpeners()">Generate Openers</button>
+        </div>
+        <div class="response-area" id="tester-response"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DATABASE ===== -->
+  <div class="tab-content" id="tab-database">
+    <div class="section">
+      <h2>Database Schema (PostgreSQL / Supabase)</h2>
+
+      <!-- ER Diagram -->
+      <div class="er-diagram">
+        <svg class="svg-animated" width="780" height="340" viewBox="0 0 780 340">
+          <defs>
+            <marker id="erArrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6" fill="none" stroke="#8B7355" stroke-width="1.2"/>
+            </marker>
+            <filter id="erShadow" x="-4%" y="-4%" width="108%" height="112%">
+              <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.06"/>
+            </filter>
+          </defs>
+
+          <!-- auth.users table -->
+          <g class="delay1" filter="url(#erShadow)">
+            <rect x="20" y="60" width="220" height="200" rx="12" fill="#EDFFF7" stroke="#6BBFA3" stroke-width="2"/>
+            <rect x="20" y="60" width="220" height="36" rx="12" fill="#6BBFA3"/>
+            <rect x="20" y="84" width="220" height="12" fill="#6BBFA3"/>
+            <text x="130" y="84" text-anchor="middle" font-size="13" font-weight="700" fill="#FFF">auth.users</text>
+            <text x="130" y="104" text-anchor="middle" font-size="9" fill="#6BBFA3" font-weight="600">Managed by Supabase</text>
+            <line x1="36" y1="114" x2="224" y2="114" stroke="#E0F5EC" stroke-width="1"/>
+            <text x="36" y="133" font-size="11" fill="#3D2C1E" font-weight="600">id</text><text x="180" y="133" font-size="10" fill="#8B7355">UUID PK</text>
+            <text x="36" y="153" font-size="11" fill="#3D2C1E">email</text><text x="180" y="153" font-size="10" fill="#8B7355">TEXT</text>
+            <text x="36" y="173" font-size="11" fill="#3D2C1E">encrypted_password</text><text x="180" y="173" font-size="10" fill="#8B7355">TEXT</text>
+            <text x="36" y="193" font-size="11" fill="#3D2C1E">created_at</text><text x="180" y="193" font-size="10" fill="#8B7355">TIMESTAMP</text>
+            <text x="36" y="213" font-size="11" fill="#3D2C1E">updated_at</text><text x="180" y="213" font-size="10" fill="#8B7355">TIMESTAMP</text>
+            <text x="36" y="240" font-size="9" fill="#6BBFA3">&#8226; Auto-managed by Supabase Auth</text>
+          </g>
+
+          <!-- profile_requests table -->
+          <g class="delay2" filter="url(#erShadow)">
+            <rect x="290" y="20" width="240" height="230" rx="12" fill="#FFF5EE" stroke="#E8836B" stroke-width="2"/>
+            <rect x="290" y="20" width="240" height="36" rx="12" fill="#E8836B"/>
+            <rect x="290" y="44" width="240" height="12" fill="#E8836B"/>
+            <text x="410" y="44" text-anchor="middle" font-size="13" font-weight="700" fill="#FFF">profile_requests</text>
+            <text x="410" y="64" text-anchor="middle" font-size="9" fill="#E8836B" font-weight="600">Auto-created by Hibernate</text>
+            <line x1="306" y1="74" x2="514" y2="74" stroke="#F5E6DD" stroke-width="1"/>
+            <text x="306" y="93" font-size="11" fill="#3D2C1E" font-weight="600">id</text><text x="460" y="93" font-size="10" fill="#8B7355">UUID PK</text>
+            <text x="306" y="113" font-size="11" fill="#3D2C1E" font-weight="600">user_id</text><text x="460" y="113" font-size="10" fill="#8B7355">VARCHAR FK</text>
+            <text x="306" y="133" font-size="11" fill="#3D2C1E">original_bio</text><text x="460" y="133" font-size="10" fill="#8B7355">TEXT</text>
+            <text x="306" y="153" font-size="11" fill="#3D2C1E">tone_preference</text><text x="460" y="153" font-size="10" fill="#8B7355">VARCHAR</text>
+            <text x="306" y="173" font-size="11" fill="#3D2C1E">rewritten_bios</text><text x="460" y="173" font-size="10" fill="#8B7355">TEXT (JSON)</text>
+            <text x="306" y="193" font-size="11" fill="#3D2C1E">conversation_starters</text><text x="460" y="193" font-size="10" fill="#8B7355">TEXT (JSON)</text>
+            <text x="306" y="213" font-size="11" fill="#3D2C1E">ranked_photos</text><text x="460" y="213" font-size="10" fill="#8B7355">TEXT (JSON)</text>
+            <text x="306" y="233" font-size="11" fill="#3D2C1E">created_at</text><text x="460" y="233" font-size="10" fill="#8B7355">TIMESTAMP</text>
+          </g>
+
+          <!-- saved_items table -->
+          <g class="delay3" filter="url(#erShadow)">
+            <rect x="580" y="80" width="180" height="190" rx="12" fill="#F3EDFF" stroke="#B49ADB" stroke-width="2"/>
+            <rect x="580" y="80" width="180" height="36" rx="12" fill="#B49ADB"/>
+            <rect x="580" y="104" width="180" height="12" fill="#B49ADB"/>
+            <text x="670" y="104" text-anchor="middle" font-size="13" font-weight="700" fill="#FFF">saved_items</text>
+            <text x="670" y="124" text-anchor="middle" font-size="9" fill="#B49ADB" font-weight="600">Manual SQL creation</text>
+            <line x1="596" y1="134" x2="744" y2="134" stroke="#E8E0F5" stroke-width="1"/>
+            <text x="596" y="153" font-size="11" fill="#3D2C1E" font-weight="600">id</text><text x="710" y="153" font-size="10" fill="#8B7355">UUID PK</text>
+            <text x="596" y="173" font-size="11" fill="#3D2C1E" font-weight="600">user_id</text><text x="710" y="173" font-size="10" fill="#8B7355">TEXT FK</text>
+            <text x="596" y="193" font-size="11" fill="#3D2C1E">type</text><text x="710" y="193" font-size="10" fill="#8B7355">TEXT</text>
+            <text x="596" y="213" font-size="11" fill="#3D2C1E">content</text><text x="710" y="213" font-size="10" fill="#8B7355">TEXT</text>
+            <text x="596" y="233" font-size="11" fill="#3D2C1E">created_at</text><text x="710" y="233" font-size="10" fill="#8B7355">TIMESTAMP</text>
+            <text x="596" y="255" font-size="9" fill="#B49ADB">&#8226; BIO | STARTER</text>
+          </g>
+
+          <!-- Relationship lines -->
+          <!-- auth.users -> profile_requests -->
+          <path d="M240,140 C265,140 270,113 290,113" fill="none" stroke="#8B7355" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#erArrow)"/>
+          <text x="258" y="118" font-size="8" fill="#8B7355">1:N</text>
+
+          <!-- auth.users -> saved_items -->
+          <path d="M240,180 C280,180 280,300 500,300 C560,300 570,173 580,173" fill="none" stroke="#8B7355" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#erArrow)"/>
+          <text x="420" y="312" font-size="8" fill="#8B7355">1:N</text>
+        </svg>
+      </div>
+
+      <h3>Table: <code class="inline">profile_requests</code></h3>
+      <p style="color:var(--text-muted);margin-bottom:10px;">Auto-created by Hibernate on first startup.</p>
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>UUID (PK)</td><td>Auto-generated</td></tr>
+          <tr><td><code>user_id</code></td><td>VARCHAR</td><td>Supabase auth user UUID</td></tr>
+          <tr><td><code>original_bio</code></td><td>TEXT</td><td>User's original bio</td></tr>
+          <tr><td><code>tone_preference</code></td><td>VARCHAR</td><td>casual / bold / polite / humorous / warm</td></tr>
+          <tr><td><code>rewritten_bios</code></td><td>TEXT</td><td>JSON array of rewritten bios</td></tr>
+          <tr><td><code>conversation_starters</code></td><td>TEXT</td><td>JSON array of starters</td></tr>
+          <tr><td><code>ranked_photos</code></td><td>TEXT</td><td>JSON array of photo rankings</td></tr>
+          <tr><td><code>created_at</code></td><td>TIMESTAMP</td><td>Record creation time</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Table: <code class="inline">saved_items</code></h3>
+      <p style="color:var(--text-muted);margin-bottom:10px;">Must be created manually in Supabase SQL Editor (see Setup tab).</p>
+      <table>
+        <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>UUID (PK)</td><td>Auto-generated</td></tr>
+          <tr><td><code>user_id</code></td><td>TEXT</td><td>Supabase auth user UUID</td></tr>
+          <tr><td><code>type</code></td><td>TEXT</td><td><code>BIO</code> or <code>STARTER</code></td></tr>
+          <tr><td><code>content</code></td><td>TEXT</td><td>Saved text content</td></tr>
+          <tr><td><code>created_at</code></td><td>TIMESTAMP</td><td>Record creation time</td></tr>
+        </tbody>
+      </table>
+
+      <div class="note">
+        <strong>Note:</strong> Registered users are managed automatically by Supabase in the built-in <code class="inline">auth.users</code> table. View them in <strong>Supabase Dashboard &rarr; Authentication &rarr; Users</strong>.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DEVELOPMENT ===== -->
+  <div class="tab-content" id="tab-dev">
+    <div class="section">
+      <h2>Development Workflow</h2>
+
+      <h3>Testing with curl</h3>
+      <div class="code-block">
+        <span class="lang-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><code># Health check
+curl http://localhost:8080/api/health
+
+# Bio rewrite
+curl -X POST http://localhost:8080/api/profile/rewrite-bio \
+  -H "Content-Type: application/json" \
+  -d '{"bio":"I like pizza","tone":"casual"}'</code></pre>
+      </div>
+
+      <h3>Running Tests</h3>
+      <div class="code-block">
+        <span class="lang-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><code># Run all tests
+./mvnw test
+
+# Run a single test class
+./mvnw test -Dtest=BioServiceImplTest
+
+# Run tests matching a pattern
+./mvnw test -Dtest="*ServiceImpl*"</code></pre>
+      </div>
+
+      <h3>Test Coverage</h3>
+      <p style="color:var(--text-muted);margin-bottom:8px;">Generate a coverage report (runs tests + produces HTML report):</p>
+      <div class="code-block">
+        <span class="lang-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><code># Generate coverage report
+./mvnw test
+
+# Open report
+open target/site/jacoco/index.html</code></pre>
+      </div>
+      <p style="color:var(--text-muted);margin-top:6px;">The report shows line and branch coverage for every class. It is generated at <code class="inline">target/site/jacoco/index.html</code> after each <code class="inline">./mvnw test</code> run.</p>
+
+      <h3>Hot Reload</h3>
+      <div class="code-block">
+        <span class="lang-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><code>./mvnw compile</code></pre>
+      </div>
+
+      <h3>Troubleshooting</h3>
+
+      <div class="collapsible">
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+          <span class="arrow">&#9654;</span>
+          <strong>Supabase Connection Issues</strong>
+        </div>
+        <div class="collapsible-body">
+          <ul>
+            <li>Ensure <code class="inline">SUPABASE_DB_JDBC_URL</code> uses JDBC format: <code class="inline">jdbc:postgresql://...</code></li>
+            <li>Ensure <code class="inline">?sslmode=require</code> is appended to the JDBC URL</li>
+            <li>Check your DB password doesn't have unescaped special characters</li>
+            <li>Verify the Supabase project is not paused (free tier pauses after inactivity)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="collapsible">
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+          <span class="arrow">&#9654;</span>
+          <strong>Port Already in Use</strong>
+        </div>
+        <div class="collapsible-body">
+          <div class="code-block">
+            <span class="lang-label">bash</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><code># Find process on port 8080
+lsof -i :8080
+
+# Kill the process
+kill -9 &lt;PID&gt;</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="collapsible">
+        <div class="collapsible-header" onclick="toggleCollapsible(this)">
+          <span class="arrow">&#9654;</span>
+          <strong>Java Version Issues</strong>
+        </div>
+        <div class="collapsible-body">
+          <div class="code-block">
+            <span class="lang-label">bash</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><code># Check Java version
+java -version
+
+# Should be Java 21 or 17+
+# Install if needed
+brew install openjdk@21</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DEPLOYMENT ===== -->
+  <div class="tab-content" id="tab-deploy">
+    <div class="section">
+      <h2>Deployment to Render</h2>
+      <p style="color:var(--text-muted);margin-bottom:16px;">The backend is containerized with Docker and deployed on Render (free tier).</p>
+
+      <!-- Deploy Pipeline Diagram -->
+      <div class="deploy-pipeline">
+        <svg class="svg-animated" width="760" height="200" viewBox="0 0 760 200">
+          <defs>
+            <marker id="dpArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8B7355"/></marker>
+          </defs>
+
+          <!-- GitHub -->
+          <rect class="delay1" x="20" y="60" width="130" height="80" rx="14" fill="#FFF" stroke="#3D2C1E" stroke-width="2"/>
+          <text x="85" y="95" text-anchor="middle" font-size="13" font-weight="700" fill="#3D2C1E">GitHub</text>
+          <text x="85" y="115" text-anchor="middle" font-size="10" fill="#8B7355">Source Code</text>
+          <text x="85" y="130" text-anchor="middle" font-size="9" fill="#8B7355">push to main</text>
+
+          <!-- Arrow: GitHub -> Docker Build -->
+          <line x1="150" y1="100" x2="195" y2="100" stroke="#8B7355" stroke-width="1.5" marker-end="url(#dpArrow)"/>
+
+          <!-- Docker Build -->
+          <rect class="delay2" x="200" y="60" width="130" height="80" rx="14" fill="#FFF5EE" stroke="#E8836B" stroke-width="2"/>
+          <text x="265" y="95" text-anchor="middle" font-size="13" font-weight="700" fill="#3D2C1E">Docker</text>
+          <text x="265" y="115" text-anchor="middle" font-size="10" fill="#E8836B" font-weight="600">Build Image</text>
+          <text x="265" y="130" text-anchor="middle" font-size="9" fill="#8B7355">Java 21 + Maven</text>
+
+          <!-- Arrow: Docker -> Render -->
+          <line x1="330" y1="100" x2="375" y2="100" stroke="#8B7355" stroke-width="1.5" marker-end="url(#dpArrow)"/>
+
+          <!-- Render -->
+          <rect class="delay3" x="380" y="40" width="160" height="120" rx="14" fill="#EDFFF7" stroke="#6BBFA3" stroke-width="2"/>
+          <text x="460" y="78" text-anchor="middle" font-size="14" font-weight="800" fill="#6BBFA3">Render</text>
+          <text x="460" y="98" text-anchor="middle" font-size="11" font-weight="700" fill="#3D2C1E">Backend API</text>
+          <text x="460" y="116" text-anchor="middle" font-size="9" fill="#8B7355">Port 8080</text>
+          <text x="460" y="132" text-anchor="middle" font-size="9" fill="#8B7355">Auto-deploy on push</text>
+          <text x="460" y="148" text-anchor="middle" font-size="8" fill="#6BBFA3" font-weight="600">dating-optimizer-backend.onrender.com</text>
+
+          <!-- Arrow: Render -> Users -->
+          <line x1="540" y1="100" x2="590" y2="100" stroke="#8B7355" stroke-width="1.5" marker-end="url(#dpArrow)"/>
+
+          <!-- Users / Internet -->
+          <rect class="delay4" x="595" y="55" width="140" height="90" rx="14" fill="#F3EDFF" stroke="#B49ADB" stroke-width="2"/>
+          <text x="665" y="92" text-anchor="middle" font-size="13" font-weight="700" fill="#3D2C1E">Users</text>
+          <text x="665" y="112" text-anchor="middle" font-size="10" fill="#B49ADB" font-weight="600">Frontend + API</text>
+          <text x="665" y="128" text-anchor="middle" font-size="9" fill="#8B7355">HTTPS / CORS</text>
+
+          <!-- Netlify branch (below) -->
+          <line x1="85" y1="140" x2="85" y2="172" stroke="#8B7355" stroke-width="1.5" stroke-dasharray="4,3"/>
+          <line x1="85" y1="172" x2="200" y2="172" stroke="#8B7355" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#dpArrow)"/>
+          <rect class="delay3" x="205" y="152" width="130" height="40" rx="10" fill="#F3EDFF" stroke="#B49ADB" stroke-width="1.5"/>
+          <text x="270" y="176" text-anchor="middle" font-size="11" font-weight="700" fill="#B49ADB">Netlify</text>
+          <text x="270" y="189" text-anchor="middle" font-size="8" fill="#8B7355">Frontend Deploy</text>
+        </svg>
+      </div>
+
+      <h3>Test Docker Locally</h3>
+      <div class="code-block">
+        <span class="lang-label">bash</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><code># Build the image
+docker build -t dating-backend .
+
+# Run with your .env file
+docker run -p 8080:8080 --env-file .env dating-backend
+
+# Verify
+curl http://localhost:8080/api/health</code></pre>
+      </div>
+
+      <h3>Deploy on Render</h3>
+      <div class="step"><div class="step-num">1</div><div class="step-body"><p>Go to <a href="https://render.com" target="_blank">render.com</a> &rarr; <strong>New &rarr; Web Service</strong></p></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body"><p>Connect your GitHub repo</p></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body"><p>Set Language: <code class="inline">Docker</code>, Branch: <code class="inline">main</code>, Instance: <code class="inline">Free</code></p></div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body"><p>Add environment variables:</p></div></div>
+
+      <table>
+        <thead><tr><th>Key</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td><code>SUPABASE_DB_JDBC_URL</code></td><td>your jdbc url</td></tr>
+          <tr><td><code>SUPABASE_DB_USERNAME</code></td><td>your username</td></tr>
+          <tr><td><code>SUPABASE_DB_PASSWORD</code></td><td>your password</td></tr>
+          <tr><td><code>SUPABASE_URL</code></td><td>your supabase project url</td></tr>
+          <tr><td><code>SUPABASE_JWT_SECRET</code></td><td>your jwt secret</td></tr>
+          <tr><td><code>CLAUDE_API_KEY</code></td><td>your claude api key</td></tr>
+          <tr><td><code>ALLOWED_ORIGINS</code></td><td><code>https://dating-optimizer.netlify.app</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="step" style="margin-top:16px;"><div class="step-num">5</div><div class="step-body"><p>Click <strong>Create Web Service</strong> &mdash; Render auto-deploys on every push to <code class="inline">main</code></p></div></div>
+
+      <div class="note">
+        <strong>Note:</strong> Free tier spins down after 15 minutes of inactivity. First request after idle takes ~30 seconds to wake up.
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PROGRESS ===== -->
+  <div class="tab-content" id="tab-progress">
+    <div class="section">
+      <h2>Project Progress</h2>
+
+      <!-- Progress Overview with Ring -->
+      <div class="progress-overview">
+        <div class="progress-ring-wrap">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#F0E6D8" stroke-width="10"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="url(#progGrad)" stroke-width="10"
+              stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="0"
+              style="animation: progressFill 1.5s ease-out;"/>
+            <defs>
+              <linearGradient id="progGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#6BBFA3"/>
+                <stop offset="100%" stop-color="#B49ADB"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="progress-ring-label">
+            <div class="prl-num">100%</div>
+            <div class="prl-text">Complete</div>
+          </div>
+        </div>
+        <div class="progress-stats">
+          <div class="ps-title">Milestone Completion</div>
+          <div class="progress-stat-row">
+            <span class="psr-label">Setup</span>
+            <div class="psr-bar-wrap"><div class="psr-bar" style="width:100%;background:var(--mint);"></div></div>
+            <span class="psr-pct">3/3</span>
+          </div>
+          <div class="progress-stat-row">
+            <span class="psr-label">Core Features</span>
+            <div class="psr-bar-wrap"><div class="psr-bar" style="width:100%;background:var(--lavender);"></div></div>
+            <span class="psr-pct">4/4</span>
+          </div>
+          <div class="progress-stat-row">
+            <span class="psr-label">Integration</span>
+            <div class="psr-bar-wrap"><div class="psr-bar" style="width:100%;background:var(--accent);"></div></div>
+            <span class="psr-pct">4/4</span>
+          </div>
+          <div class="progress-stat-row">
+            <span class="psr-label">Deployment</span>
+            <div class="psr-bar-wrap"><div class="psr-bar" style="width:100%;background:var(--golden);"></div></div>
+            <span class="psr-pct">3/3</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-item done">
+          <div class="tl-content">
+            <div class="tl-title">Week 1-2: Project Setup</div>
+            <div class="tl-tasks">
+              <div class="done-task">&#10003; Spring Boot configuration with Java 21</div>
+              <div class="done-task">&#10003; Supabase PostgreSQL connection</div>
+              <div class="done-task">&#10003; REST API structure with CORS for React frontend</div>
+            </div>
+          </div>
+        </div>
+        <div class="timeline-item done">
+          <div class="tl-content">
+            <div class="tl-title">Week 3-4: Core Features</div>
+            <div class="tl-tasks">
+              <div class="done-task">&#10003; Claude API integration service</div>
+              <div class="done-task">&#10003; Bio rewriting with multiple tones (casual, bold, polite, humorous, warm)</div>
+              <div class="done-task">&#10003; Conversation starter generation</div>
+              <div class="done-task">&#10003; Save/history endpoints for bios and starters</div>
+            </div>
+          </div>
+        </div>
+        <div class="timeline-item done">
+          <div class="tl-content">
+            <div class="tl-title">Week 5-6: Photo Ranking &amp; Integration</div>
+            <div class="tl-tasks">
+              <div class="done-task">&#10003; Photo ranking with Claude Vision API</div>
+              <div class="done-task">&#10003; File upload handling</div>
+              <div class="done-task">&#10003; React frontend integration</div>
+              <div class="done-task">&#10003; Error handling, validation, and retry mechanism</div>
+            </div>
+          </div>
+        </div>
+        <div class="timeline-item done">
+          <div class="tl-content">
+            <div class="tl-title">Week 7-8: Testing &amp; Deployment</div>
+            <div class="tl-tasks">
+              <div class="done-task">&#10003; Unit and integration tests (JaCoCo coverage)</div>
+              <div class="done-task">&#10003; Docker containerization</div>
+              <div class="done-task">&#10003; Deployed to Render (backend) and Netlify (frontend)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  MIT License &mdash; CS 5500 Academic Project
+</footer>
+
+<script>
+// Tab switching
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// Collapsible panels
+function toggleCollapsible(header) {
+  header.parentElement.classList.toggle('open');
+}
+
+// Copy code
+function copyCode(btn) {
+  const code = btn.parentElement.querySelector('code').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// API Tester
+function getBaseUrl() {
+  return document.getElementById('tester-base-url').value.replace(/\/+$/, '');
+}
+
+function getHeaders() {
+  const headers = { 'Content-Type': 'application/json' };
+  const token = document.getElementById('tester-token').value.trim();
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  return headers;
+}
+
+function showResponse(data, status) {
+  const el = document.getElementById('tester-response');
+  const isOk = status >= 200 && status < 300;
+  el.innerHTML = '<strong>Status: ' + status + '</strong> <span class="status-badge ' +
+    (isOk ? 'status-ok' : 'status-err') + '">' + (isOk ? 'OK' : 'Error') + '</span>\n\n' +
+    JSON.stringify(data, null, 2);
+  el.classList.add('visible');
+}
+
+function showError(err) {
+  const el = document.getElementById('tester-response');
+  el.innerHTML = '<strong style="color:var(--red)">Request Failed</strong>\n\n' + err.message +
+    '\n\nMake sure the backend is running and CORS allows this origin.';
+  el.classList.add('visible');
+}
+
+async function testHealth() {
+  try {
+    const res = await fetch(getBaseUrl() + '/api/health');
+    showResponse(await res.json(), res.status);
+  } catch (e) { showError(e); }
+}
+
+async function testBioRewrite() {
+  try {
+    const res = await fetch(getBaseUrl() + '/api/profile/rewrite-bio', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        bio: document.getElementById('tester-bio').value,
+        tone: document.getElementById('tester-tone').value
+      })
+    });
+    showResponse(await res.json(), res.status);
+  } catch (e) { showError(e); }
+}
+
+async function testOpeners() {
+  try {
+    const res = await fetch(getBaseUrl() + '/api/profile/generate-openers', {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        bio: document.getElementById('tester-bio').value,
+        tone: document.getElementById('tester-tone').value
+      })
+    });
+    showResponse(await res.json(), res.status);
+  } catch (e) { showError(e); }
+}
+</script>
+
+</body>
+</html>

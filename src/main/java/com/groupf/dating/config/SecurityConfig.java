@@ -27,6 +27,7 @@ public class SecurityConfig {
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .cors(Customizer.withDefaults())
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/", "/index.html").permitAll()
                 .requestMatchers("/api/health", "/api/test/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated()
