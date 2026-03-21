@@ -1,16 +1,16 @@
-# 重试机制使用示例
+# Retry Mechanism Usage Examples
 
-## 目录
-1. [使用 RetryTemplate (推荐)](#使用-retrytemplate-推荐)
-2. [使用 @Retryable 注解](#使用-retryable-注解)
-3. [手动重试逻辑](#手动重试逻辑)
-4. [测试重试机制](#测试重试机制)
+## Table of Contents
+1. [Using RetryTemplate (Recommended)](#using-retrytemplate-recommended)
+2. [Using @Retryable Annotation](#using-retryable-annotation)
+3. [Manual Retry Logic](#manual-retry-logic)
+4. [Testing the Retry Mechanism](#testing-the-retry-mechanism)
 
 ---
 
-## 使用 RetryTemplate (推荐)
+## Using RetryTemplate (Recommended)
 
-### 基本用法
+### Basic Usage
 
 ```java
 @Service
@@ -27,7 +27,7 @@ public class ClaudeApiService {
     private String apiKey;
 
     /**
-     * 带重试的 Claude API 调用
+     * Claude API call with retry
      */
     public String callClaudeApi(String prompt) {
         return claudeApiRetryTemplate.execute(context -> {
@@ -37,7 +37,7 @@ public class ClaudeApiService {
                 headers.setContentType(MediaType.APPLICATION_JSON);
 
                 Map<String, Object> requestBody = Map.of(
-                    "model", "claude-3-sonnet-20240229",
+                    "model", "claude-sonnet-4-6",
                     "messages", List.of(Map.of("role", "user", "content", prompt)),
                     "max_tokens", 1024
                 );
@@ -75,7 +75,7 @@ public class ClaudeApiService {
     }
 
     private String extractContent(Map<String, Object> responseBody) {
-        // 解析响应内容
+        // Parse response content
         List<Map<String, Object>> content = (List<Map<String, Object>>) responseBody.get("content");
         if (content != null && !content.isEmpty()) {
             return (String) content.get(0).get("text");
@@ -85,7 +85,7 @@ public class ClaudeApiService {
 }
 ```
 
-### 带回调的重试
+### Retry with Recovery Callback
 
 ```java
 @Service
@@ -96,12 +96,12 @@ public class PhotoRankingService {
 
     public PhotoRankingResponse rankPhotos(PhotoRankingRequest request) {
         return claudeApiRetryTemplate.execute(
-            // 主要逻辑
+            // Main logic
             context -> {
                 log.info("Ranking photos, attempt: {}", context.getRetryCount() + 1);
                 return callClaudeApiForRanking(request);
             },
-            // 重试耗尽后的恢复逻辑
+            // Recovery logic after retries exhausted
             context -> {
                 log.error("Photo ranking failed after {} attempts", context.getRetryCount());
                 throw new BusinessException(
@@ -113,7 +113,7 @@ public class PhotoRankingService {
     }
 
     private PhotoRankingResponse callClaudeApiForRanking(PhotoRankingRequest request) {
-        // 实际的 API 调用逻辑
+        // Actual API call logic
         // ...
     }
 }
@@ -121,19 +121,19 @@ public class PhotoRankingService {
 
 ---
 
-## 使用 @Retryable 注解
+## Using @Retryable Annotation
 
-### 配置 @EnableRetry
+### Configure @EnableRetry
 
 ```java
 @Configuration
 @EnableRetry
 public class RetryConfig {
-    // 已在 RetryConfig.java 中配置
+    // Already configured in RetryConfig.java
 }
 ```
 
-### 基本注解使用
+### Basic Annotation Usage
 
 ```java
 @Service
@@ -144,12 +144,12 @@ public class BioService {
     private ClaudeApiClient claudeApiClient;
 
     /**
-     * 使用注解方式实现重试
-     * - maxAttempts: 最大尝试次数 (包括首次调用)
-     * - backoff: 退避策略
-     *   - delay: 初始延迟 (毫秒)
-     *   - multiplier: 延迟倍数
-     *   - maxDelay: 最大延迟 (毫秒)
+     * Annotation-based retry
+     * - maxAttempts: max number of attempts (including initial call)
+     * - backoff: backoff strategy
+     *   - delay: initial delay (milliseconds)
+     *   - multiplier: delay multiplier
+     *   - maxDelay: max delay (milliseconds)
      */
     @Retryable(
         value = {ClaudeApiException.class},
@@ -163,17 +163,17 @@ public class BioService {
     public BioRewriteResponse rewriteBio(BioRewriteRequest request) {
         log.info("Calling Claude API to rewrite bio");
 
-        // 验证输入
+        // Validate input
         validateBioRequest(request);
 
-        // 调用 Claude API
+        // Call Claude API
         return claudeApiClient.rewriteBio(request);
     }
 
     /**
-     * 重试耗尽后的恢复方法
-     * - 方法签名必须与原方法匹配（除了返回值可以不同）
-     * - 第一个参数必须是异常类型
+     * Recovery method after retries exhausted
+     * - Method signature must match the original method
+     * - First parameter must be the exception type
      */
     @Recover
     public BioRewriteResponse recoverBioRewrite(
@@ -182,7 +182,7 @@ public class BioService {
 
         log.error("Failed to rewrite bio after retries. Error: {}", e.getMessage());
 
-        // 根据错误类型决定恢复策略
+        // Choose recovery strategy based on error type
         if (e.getErrorCode() == ErrorCode.CLAUDE_RATE_LIMIT) {
             throw new BusinessException(
                 ErrorCode.BIO_GENERATION_FAILED,
@@ -214,14 +214,14 @@ public class BioService {
 }
 ```
 
-### 条件重试
+### Conditional Retry
 
 ```java
 @Service
 public class ConversationStarterService {
 
     /**
-     * 只重试特定的可重试异常
+     * Only retry specific retryable exceptions
      */
     @Retryable(
         include = {ClaudeApiException.class},
@@ -229,12 +229,12 @@ public class ConversationStarterService {
         maxAttempts = 3
     )
     public ConversationStarterResponse generateStarters(ConversationStarterRequest request) {
-        // 业务异常不会触发重试
+        // Business exceptions do not trigger retry
         if (request.getMatchProfile() == null) {
             throw new BusinessException(ErrorCode.CONV_INVALID_INPUT);
         }
 
-        // Claude API 异常会触发重试
+        // Claude API exceptions trigger retry
         return claudeApiClient.generateConversationStarters(request);
     }
 }
@@ -242,11 +242,11 @@ public class ConversationStarterService {
 
 ---
 
-## 手动重试逻辑
+## Manual Retry Logic
 
-### 适用场景
+### When to Use
 
-当需要更细粒度的控制时，可以手动实现重试逻辑：
+When you need finer-grained control, you can implement retry logic manually:
 
 ```java
 @Service
@@ -258,7 +258,7 @@ public class ManualRetryService {
     private static final double MULTIPLIER = 2.0;
 
     /**
-     * 手动实现指数退避重试
+     * Manual exponential backoff retry
      */
     public String callWithManualRetry(String prompt) {
         int attempt = 0;
@@ -272,13 +272,13 @@ public class ManualRetryService {
                 return callClaudeApi(prompt);
 
             } catch (ClaudeApiException e) {
-                // 如果不可重试，直接抛出
+                // If not retryable, throw immediately
                 if (!e.isRetryable()) {
                     log.error("Non-retryable error: {}", e.getMessage());
                     throw e;
                 }
 
-                // 如果已达到最大重试次数，抛出
+                // If max retries reached, throw
                 if (attempt >= MAX_RETRIES) {
                     log.error("Max retries ({}) exceeded", MAX_RETRIES);
                     throw new ClaudeApiException(
@@ -288,7 +288,7 @@ public class ManualRetryService {
                     );
                 }
 
-                // 计算延迟并等待
+                // Calculate delay and wait
                 log.warn("Attempt {} failed, retrying after {}ms. Error: {}",
                     attempt, delay, e.getMessage());
 
@@ -299,7 +299,7 @@ public class ManualRetryService {
                     throw new ClaudeApiException(ErrorCode.SYSTEM_ERROR, ie);
                 }
 
-                // 指数增长延迟时间
+                // Exponentially increase delay
                 delay = (long) (delay * MULTIPLIER);
             }
         }
@@ -308,7 +308,7 @@ public class ManualRetryService {
     }
 
     private String callClaudeApi(String prompt) {
-        // 实际的 API 调用
+        // Actual API call
         // ...
         return "response";
     }
@@ -317,9 +317,9 @@ public class ManualRetryService {
 
 ---
 
-## 测试重试机制
+## Testing the Retry Mechanism
 
-### 单元测试
+### Unit Tests
 
 ```java
 @SpringBootTest
@@ -333,60 +333,60 @@ class RetryMechanismTest {
 
     @Test
     void testRetryOnRateLimitError() {
-        // 模拟前两次调用失败，第三次成功
+        // Simulate first two calls failing, third succeeding
         when(mockApiClient.callApi(anyString()))
             .thenThrow(new ClaudeApiException(ErrorCode.CLAUDE_RATE_LIMIT))
             .thenThrow(new ClaudeApiException(ErrorCode.CLAUDE_RATE_LIMIT))
             .thenReturn("success");
 
-        // 执行带重试的调用
+        // Execute call with retry
         String result = claudeApiRetryTemplate.execute(context ->
             mockApiClient.callApi("test")
         );
 
-        // 验证结果
+        // Verify result
         assertEquals("success", result);
-        // 验证调用了3次
+        // Verify called 3 times
         verify(mockApiClient, times(3)).callApi("test");
     }
 
     @Test
     void testNoRetryOnNonRetryableError() {
-        // 模拟不可重试的错误
+        // Simulate non-retryable error
         when(mockApiClient.callApi(anyString()))
             .thenThrow(new ClaudeApiException(ErrorCode.CLAUDE_API_KEY_INVALID));
 
-        // 验证不会重试
+        // Verify no retry
         assertThrows(ClaudeApiException.class, () ->
             claudeApiRetryTemplate.execute(context ->
                 mockApiClient.callApi("test")
             )
         );
 
-        // 验证只调用了1次
+        // Verify called only once
         verify(mockApiClient, times(1)).callApi("test");
     }
 
     @Test
     void testMaxRetriesExceeded() {
-        // 模拟持续失败
+        // Simulate persistent failure
         when(mockApiClient.callApi(anyString()))
             .thenThrow(new ClaudeApiException(ErrorCode.CLAUDE_TIMEOUT));
 
-        // 验证重试3次后抛出异常
+        // Verify exception after 3 retries
         assertThrows(ClaudeApiException.class, () ->
             claudeApiRetryTemplate.execute(context ->
                 mockApiClient.callApi("test")
             )
         );
 
-        // 验证调用了3次（最大重试次数）
+        // Verify called 3 times (max retries)
         verify(mockApiClient, times(3)).callApi("test");
     }
 }
 ```
 
-### 集成测试
+### Integration Tests
 
 ```java
 @SpringBootTest
@@ -401,19 +401,19 @@ class RetryIntegrationTest {
 
     @Test
     void testBioRewriteWithRetry() throws Exception {
-        // 模拟第一次失败，第二次成功
+        // Simulate first call failing, second succeeding
         when(mockApiClient.rewriteBio(any()))
             .thenThrow(new ClaudeApiException(ErrorCode.CLAUDE_TIMEOUT))
             .thenReturn(new BioRewriteResponse("Rewritten bio"));
 
-        // 发送请求
-        mockMvc.perform(post("/api/v1/profile/bio/rewrite")
+        // Send request
+        mockMvc.perform(post("/api/profile/rewrite-bio")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"bioText\":\"Original bio\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.rewrittenBio").value("Rewritten bio"));
 
-        // 验证重试了2次
+        // Verify retried twice
         verify(mockApiClient, times(2)).rewriteBio(any());
     }
 }
@@ -421,27 +421,27 @@ class RetryIntegrationTest {
 
 ---
 
-## 最佳实践
+## Best Practices
 
-### 1. 选择合适的重试策略
+### 1. Choose the right retry strategy
 
-- **快速失败场景**: 用户输入错误、API Key 无效 → **不重试**
-- **瞬时故障**: 网络超时、服务过载 → **重试 2-3 次**
-- **限流场景**: Rate limit → **重试 + 指数退避**
+- **Fail-fast scenarios**: User input errors, invalid API key -> **No retry**
+- **Transient failures**: Network timeout, service overloaded -> **Retry 2-3 times**
+- **Rate limiting**: Rate limit -> **Retry with exponential backoff**
 
-### 2. 设置合理的超时时间
+### 2. Set reasonable timeouts
 
 ```java
 @Bean
 public RestTemplate restTemplate() {
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-    factory.setConnectTimeout(5000);  // 连接超时 5 秒
-    factory.setReadTimeout(30000);    // 读取超时 30 秒
+    factory.setConnectTimeout(5000);  // Connection timeout: 5 seconds
+    factory.setReadTimeout(30000);    // Read timeout: 30 seconds
     return new RestTemplate(factory);
 }
 ```
 
-### 3. 记录重试日志
+### 3. Log retry attempts
 
 ```java
 retryTemplate.registerListener(new RetryListener() {
@@ -459,7 +459,7 @@ retryTemplate.registerListener(new RetryListener() {
 });
 ```
 
-### 4. 监控重试指标
+### 4. Monitor retry metrics
 
 ```java
 @Component
@@ -476,10 +476,10 @@ public class RetryMetrics {
 }
 ```
 
-### 5. 避免雪崩效应
+### 5. Prevent cascading failures
 
 ```java
-// 添加断路器
+// Add circuit breaker
 @CircuitBreaker(name = "claudeApi", fallbackMethod = "fallback")
 @Retryable(...)
 public String callClaudeApi(String prompt) {
