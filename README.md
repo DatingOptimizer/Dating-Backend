@@ -23,12 +23,15 @@ Spring Boot REST API backend for the AI Dating Profile Optimizer application. Th
 
 ```
 src/main/java/com/groupf/dating/
-├── config/              # Configuration classes (CORS, Security, DataSource)
+├── common/              # Constants and enums (ToneType, ApiConstants, AppConstants)
+├── config/              # Configuration (CORS, Security, RestClient, Jackson, Retry)
 ├── controller/          # REST API endpoints
 ├── dto/                 # Data Transfer Objects (request/response)
+├── exception/           # Error codes, custom exceptions, global handler
 ├── model/               # JPA entities
 ├── repository/          # JPA repositories
-├── service/             # Business logic
+├── service/             # Service interfaces
+│   └── impl/            # Service implementations
 ├── util/                # Helpers (PromptBuilder, StringListConverter, ImageUtil)
 └── DatingApplication.java
 ```
@@ -318,32 +321,29 @@ Must be created manually in Supabase SQL Editor (see Setup step 5 above).
 
 Registered users are managed automatically by Supabase in the built-in `auth.users` table. View them in **Supabase Dashboard → Authentication → Users**.
 
-## Next Steps (Week by Week)
+## Completed Milestones
 
-### ✅ Week 1-2: Project Setup (DONE)
-- [x] Fix Spring Boot configuration
-- [x] Set up Supabase PostgreSQL connection
-- [x] Create basic REST API structure
-- [x] Add CORS configuration for React frontend
+### Week 1-2: Project Setup
+- [x] Spring Boot configuration with Java 21
+- [x] Supabase PostgreSQL connection
+- [x] REST API structure with CORS for React frontend
 
-### ✅ Week 3-4: Core Features (DONE)
-- [x] Implement Claude API integration service
-- [x] Complete bio rewriting with multiple tones (casual, bold, polite, humorous, warm)
-- [x] Add conversation starter generation
-- [x] Add save/history endpoints for bios and starters
-- [ ] Implement basic content moderation
+### Week 3-4: Core Features
+- [x] Claude API integration service
+- [x] Bio rewriting with multiple tones (casual, bold, polite, humorous, warm)
+- [x] Conversation starter generation
+- [x] Save/history endpoints for bios and starters
 
-### ✅ Week 5-6: Photo Ranking & Integration (DONE)
-- [x] Implement photo ranking with Claude Vision API
-- [x] Add file upload handling
-- [x] Connect with React frontend
-- [x] Add error handling and validation
+### Week 5-6: Photo Ranking & Integration
+- [x] Photo ranking with Claude Vision API
+- [x] File upload handling
+- [x] React frontend integration
+- [x] Error handling, validation, and retry mechanism
 
-### 📝 Week 7-8: Testing & Deployment
-- [x] Write unit and integration tests
-- [x] Deploy to Render
-- [ ] Configure Supabase production environment
-- [ ] Performance testing
+### Week 7-8: Testing & Deployment
+- [x] Unit and integration tests (JaCoCo coverage)
+- [x] Docker containerization
+- [x] Deployed to Render (backend) and Netlify (frontend)
 
 ## Deployment to Render
 
@@ -424,10 +424,10 @@ brew install openjdk@21
 
 ## Team Resources
 
-- **API Documentation**: Update as you add endpoints
-- **Postman Collection**: Create shared collection for testing (add `Authorization: Bearer <token>` header)
+- **Postman Collection**: Shared collection for testing (add `Authorization: Bearer <token>` header)
 - **Supabase Dashboard**: View users (Authentication → Users) and data (Table Editor)
-- **Heroku Dashboard**: Monitor deployment and logs
+- **Render Dashboard**: Monitor deployment and logs
+- **Error Handling Docs**: See `docs/ERROR_CODES.md` and `docs/ERROR_HANDLING_QUICKSTART.md`
 
 ## License
 
