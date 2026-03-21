@@ -1,51 +1,51 @@
-# 错误处理快速开始
+# Error Handling Quick Start
 
-## 📋 已创建的文件
+## Created Files
 
-### 核心类
-1. **ErrorCode.java** - 错误码枚举（包含所有自定义错误码）
-2. **ClaudeApiException.java** - Claude API 专用异常
-3. **BusinessException.java** - 业务异常基类
-4. **RetryConfig.java** - 重试配置（指数退避）
-5. **ErrorResponse.java** (已更新) - 错误响应 DTO
-6. **GlobalExceptionHandler.java** (已更新) - 全局异常处理器
+### Core Classes
+1. **ErrorCode.java** - Error code enum (all custom error codes)
+2. **ClaudeApiException.java** - Claude API specific exception
+3. **BusinessException.java** - Business exception base class
+4. **RetryConfig.java** - Retry configuration (exponential backoff)
+5. **ErrorResponse.java** (updated) - Error response DTO
+6. **GlobalExceptionHandler.java** (updated) - Global exception handler
 
-### 文档
-1. **ERROR_CODES.md** - 完整错误码文档
-2. **RETRY_USAGE_EXAMPLE.md** - 重试机制使用示例
-3. **ERROR_HANDLING_QUICKSTART.md** - 本文件
+### Documentation
+1. **ERROR_CODES.md** - Complete error code reference
+2. **RETRY_USAGE_EXAMPLE.md** - Retry mechanism usage examples
+3. **ERROR_HANDLING_QUICKSTART.md** - This file
 
-### 依赖更新
-- **pom.xml** - 添加了 Spring Retry 和 AOP 依赖
+### Dependency Updates
+- **pom.xml** - Added Spring Retry and AOP dependencies
 
 ---
 
-## 🚀 快速使用
+## Quick Usage
 
-### 1. 抛出业务异常
+### 1. Throw a business exception
 
 ```java
-// 简单使用
+// Simple usage
 throw new BusinessException(ErrorCode.BIO_TOO_SHORT);
 
-// 自定义消息
+// Custom message
 throw new BusinessException(
     ErrorCode.PHOTO_TOO_MANY,
     "You provided " + photos.size() + " photos"
 );
 ```
 
-### 2. 抛出 Claude API 异常
+### 2. Throw a Claude API exception
 
 ```java
-// 根据 HTTP 状态码自动创建
+// Auto-create from HTTP status code
 throw ClaudeApiException.fromHttpStatus(429, "Rate limit exceeded");
 
-// 直接使用错误码
+// Use error code directly
 throw new ClaudeApiException(ErrorCode.CLAUDE_TIMEOUT);
 ```
 
-### 3. 使用重试机制（推荐方式）
+### 3. Use retry mechanism (recommended)
 
 ```java
 @Service
@@ -56,15 +56,15 @@ public class MyService {
 
     public String callApi(String input) {
         return claudeApiRetryTemplate.execute(context -> {
-            // 你的 Claude API 调用逻辑
-            // 如果抛出可重试的异常，会自动重试
+            // Your Claude API call logic
+            // Retryable exceptions are automatically retried
             return makeApiCall(input);
         });
     }
 }
 ```
 
-### 4. 使用注解方式重试
+### 4. Use annotation-based retry
 
 ```java
 @Service
@@ -76,13 +76,13 @@ public class MyService {
         backoff = @Backoff(delay = 1000, multiplier = 2)
     )
     public String callApi(String input) {
-        // 抛出 ClaudeApiException 时会自动重试
+        // Automatically retries on ClaudeApiException
         return makeApiCall(input);
     }
 
     @Recover
     public String recover(ClaudeApiException e, String input) {
-        // 重试失败后的降级逻辑
+        // Fallback logic after retries exhausted
         log.error("Failed after retries", e);
         throw new BusinessException(ErrorCode.RETRY_EXHAUSTED);
     }
@@ -91,9 +91,9 @@ public class MyService {
 
 ---
 
-## 📊 错误响应格式
+## Error Response Format
 
-客户端收到的错误响应：
+Error response received by the client:
 
 ```json
 {
@@ -101,61 +101,59 @@ public class MyService {
   "status": 429,
   "error": "CLAUDE_RATE_LIMIT",
   "message": "Claude API rate limit exceeded",
-  "path": "/api/v1/profile/bio/rewrite",
-  "timestamp": "2025-01-15T10:30:00",
+  "path": "/api/profile/rewrite-bio",
+  "timestamp": "2026-03-20T10:30:00",
   "retryable": true
 }
 ```
 
 ---
 
-## 🔢 常用错误码
+## Common Error Codes
 
-| 错误码 | 名称 | 说明 | 可重试 |
-|--------|------|------|--------|
-| 1000 | BAD_REQUEST | 请求参数无效 | ❌ |
-| 1100 | BIO_TOO_SHORT | Bio 太短 | ❌ |
-| 1101 | BIO_TOO_LONG | Bio 太长 | ❌ |
-| 2001 | PHOTO_TOO_FEW | 照片太少 | ❌ |
-| 2002 | PHOTO_TOO_MANY | 照片太多 | ❌ |
-| 4001 | CLAUDE_API_KEY_INVALID | API 密钥无效 | ❌ |
-| 4002 | CLAUDE_RATE_LIMIT | 速率限制 | ✅ |
-| 4005 | CLAUDE_TIMEOUT | 请求超时 | ✅ |
-| 4006 | CLAUDE_OVERLOADED | 服务过载 | ✅ |
-| 9000 | SYSTEM_ERROR | 系统错误 | ❌ |
+| Code | Name | Description | Retryable |
+|------|------|-------------|-----------|
+| 1000 | BAD_REQUEST | Invalid request parameters | No |
+| 1100 | BIO_TOO_SHORT | Bio too short | No |
+| 1101 | BIO_TOO_LONG | Bio too long | No |
+| 2001 | PHOTO_TOO_FEW | Too few photos | No |
+| 2002 | PHOTO_TOO_MANY | Too many photos | No |
+| 4001 | CLAUDE_API_KEY_INVALID | API key invalid | No |
+| 4002 | CLAUDE_RATE_LIMIT | Rate limited | Yes |
+| 4005 | CLAUDE_TIMEOUT | Request timeout | Yes |
+| 4006 | CLAUDE_OVERLOADED | Service overloaded | Yes |
+| 9000 | SYSTEM_ERROR | System error | No |
 
-完整错误码列表请查看 [ERROR_CODES.md](ERROR_CODES.md)
+See [ERROR_CODES.md](ERROR_CODES.md) for the full list.
 
 ---
 
-## ⚙️ 重试配置说明
+## Retry Configuration
 
-### Claude API 重试策略
+### Claude API Retry Policy
 
-- **最大重试次数**: 3 次
-- **初始延迟**: 1 秒
-- **延迟倍数**: 2 (指数退避)
-- **最大延迟**: 10 秒
+- **Max retry attempts**: 3
+- **Initial delay**: 1 second
+- **Delay multiplier**: 2 (exponential backoff)
+- **Max delay**: 10 seconds
 
-**重试时间表:**
-- 第 1 次失败 → 1 秒后重试
-- 第 2 次失败 → 2 秒后重试
-- 第 3 次失败 → 4 秒后重试
+**Retry schedule:**
+- 1st failure -> retry after 1 second
+- 2nd failure -> retry after 2 seconds
+- 3rd failure -> retry after 4 seconds
 
-### 可重试的错误
+### Retryable Errors
 
-只有以下错误会自动重试：
+Only the following errors are automatically retried:
 - `CLAUDE_RATE_LIMIT` (429)
 - `CLAUDE_TIMEOUT` (408)
 - `CLAUDE_OVERLOADED` (503)
 - `CLAUDE_SERVER_ERROR` (500/502/504)
-- `CLAUDE_CONNECTION_ERROR` (连接失败)
+- `CLAUDE_CONNECTION_ERROR` (connection failure)
 
 ---
 
-## 📝 实际使用示例
-
-### Service 层示例
+## Service Layer Example
 
 ```java
 @Service
@@ -170,10 +168,10 @@ public class BioService {
     private String apiKey;
 
     public BioRewriteResponse rewriteBio(BioRewriteRequest request) {
-        // 1. 参数验证 - 抛出 BusinessException
+        // 1. Validate parameters - throws BusinessException
         validateBioRequest(request);
 
-        // 2. 带重试的 API 调用 - 自动处理 ClaudeApiException
+        // 2. API call with retry - automatically handles ClaudeApiException
         return claudeApiRetryTemplate.execute(context -> {
             log.info("Calling Claude API (attempt {})", context.getRetryCount() + 1);
             return callClaudeApi(request);
@@ -195,28 +193,28 @@ public class BioService {
             headers.set("x-api-key", apiKey);
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            // 构建请求
+            // Build request
             Map<String, Object> body = buildApiRequest(request);
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
-            // 调用 API
+            // Call API
             ResponseEntity<Map> response = restTemplate.postForEntity(
                 "https://api.anthropic.com/v1/messages",
                 entity,
                 Map.class
             );
 
-            // 解析响应
+            // Parse response
             return parseResponse(response.getBody());
 
         } catch (HttpClientErrorException | HttpServerErrorException e) {
-            // HTTP 错误 → ClaudeApiException (可能触发重试)
+            // HTTP error -> ClaudeApiException (may trigger retry)
             throw ClaudeApiException.fromHttpStatus(
                 e.getStatusCode().value(),
                 e.getMessage()
             );
         } catch (ResourceAccessException e) {
-            // 连接错误 → ClaudeApiException (触发重试)
+            // Connection error -> ClaudeApiException (triggers retry)
             throw new ClaudeApiException(
                 ErrorCode.CLAUDE_CONNECTION_ERROR,
                 "Failed to connect to Claude API",
@@ -227,7 +225,7 @@ public class BioService {
 
     private Map<String, Object> buildApiRequest(BioRewriteRequest request) {
         return Map.of(
-            "model", "claude-3-sonnet-20240229",
+            "model", "claude-sonnet-4-6",
             "messages", List.of(Map.of(
                 "role", "user",
                 "content", "Rewrite this bio: " + request.getBioText()
@@ -255,9 +253,9 @@ public class BioService {
 
 ---
 
-## 🧪 测试
+## Testing
 
-### 单元测试示例
+### Unit Test Example
 
 ```java
 @SpringBootTest
@@ -280,7 +278,7 @@ class BioServiceTest {
 
     @Test
     void testRetryOnTimeout() {
-        // 测试重试机制
+        // Test retry mechanism
         // ...
     }
 }
@@ -288,32 +286,32 @@ class BioServiceTest {
 
 ---
 
-## 📚 更多信息
+## More Information
 
-- **完整错误码列表**: [ERROR_CODES.md](ERROR_CODES.md)
-- **重试机制详细示例**: [RETRY_USAGE_EXAMPLE.md](RETRY_USAGE_EXAMPLE.md)
-
----
-
-## ✅ 下一步
-
-1. **运行 `mvn clean install`** 安装新依赖
-2. **在 Service 中使用错误码** 替换原有的异常抛出
-3. **测试重试机制** 模拟 Claude API 失败场景
-4. **配置监控告警** 对关键错误码进行监控
+- **Full error code list**: [ERROR_CODES.md](ERROR_CODES.md)
+- **Detailed retry examples**: [RETRY_USAGE_EXAMPLE.md](RETRY_USAGE_EXAMPLE.md)
 
 ---
 
-## 💡 最佳实践
+## Next Steps
 
-### ✅ DO
-- 使用明确的错误码而不是通用异常
-- 为可重试的错误使用 RetryTemplate
-- 在日志中记录错误码和上下文信息
-- 在文档中说明每个错误的处理方式
+1. **Run `mvn clean install`** to install new dependencies
+2. **Use error codes in Services** to replace generic exception throwing
+3. **Test the retry mechanism** by simulating Claude API failures
+4. **Configure monitoring and alerting** for critical error codes
 
-### ❌ DON'T
-- 不要捕获异常后不处理
-- 不要对不可重试的错误使用重试
-- 不要在业务异常中包含敏感信息
-- 不要使用魔法数字，始终使用 ErrorCode 枚举
+---
+
+## Best Practices
+
+### DO
+- Use specific error codes instead of generic exceptions
+- Use RetryTemplate for retryable errors
+- Log error codes and context information
+- Document the handling approach for each error
+
+### DON'T
+- Don't catch exceptions without handling them
+- Don't retry non-retryable errors
+- Don't include sensitive information in business exceptions
+- Don't use magic numbers; always use ErrorCode enum
