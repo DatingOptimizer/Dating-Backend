@@ -139,4 +139,33 @@ class ClaudeApiServiceImplTest {
 
         assertThat(result).isEqualTo("Rewritten bio here");
     }
+
+    // ====== HANDWRITTEN TESTS ======
+
+    @Test
+    void fromHttpStatus_404_fallsThroughToConnectionError() {
+        // 404 isn't explicitly handled, so it hits the default case -> CLAUDE_CONNECTION_ERROR
+        ClaudeApiException ex = ClaudeApiException.fromHttpStatus(404, "not found");
+        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.CLAUDE_CONNECTION_ERROR);
+        assertThat(ex.isRetryable()).isTrue(); // connection errors are retryable
+    }
+
+    @Test
+    void errorCode_overloaded_isRetryable() {
+        // overloaded is transient, should be retryable
+        assertThat(ErrorCode.CLAUDE_OVERLOADED.isRetryable()).isTrue();
+    }
+
+    @Test
+    void errorCode_quotaExceeded_isNotRetryable() {
+        // quota errors won't go away on retry, should be non-retryable
+        assertThat(ErrorCode.CLAUDE_QUOTA_EXCEEDED.isRetryable()).isFalse();
+    }
+
+    @Test
+    void errorCode_fromCode_returnsCorrectEntry() {
+        // spot-check the lookup by code number
+        ErrorCode found = ErrorCode.fromCode(4002);
+        assertThat(found).isEqualTo(ErrorCode.CLAUDE_RATE_LIMIT);
+    }
 }

@@ -154,4 +154,45 @@ class PhotoRankingServiceImplTest {
     private MultipartFile[] twoPhotos() {
         return new MultipartFile[]{jpeg("photo1.jpg"), jpeg("photo2.jpg")};
     }
+
+    // ====== HANDWRITTEN TESTS ======
+
+    @Test
+    void rankPhotos_acceptsExactlyTwoPhotos() {
+        // make sure the boundary is handled correctly
+        String json = "[{\"rank\": 1, \"score\": 88, \"reasoning\": \"Best one\"}, " +
+                      "{\"rank\": 2, \"score\": 55, \"reasoning\": \"Not as good\"}]";
+        when(claudeApiService.callClaudeApiWithVision(anyString(), anyString(), any())).thenReturn(json);
+
+        var result = photoRankingService.rankPhotos(twoPhotos());
+        assertThat(result.getRankedPhotos()).hasSize(2);
+    }
+
+    @Test
+    void rankPhotos_acceptsExactlyFivePhotos() {
+        // testing the upper boundary doesn't throw
+        MultipartFile[] fivePhotos = new MultipartFile[5];
+        for (int i = 0; i < 5; i++) fivePhotos[i] = jpeg("p" + i + ".jpg");
+
+        String json = "[{\"rank\":1,\"score\":90,\"reasoning\":\"a\"},{\"rank\":2,\"score\":80,\"reasoning\":\"b\"}," +
+                "{\"rank\":3,\"score\":70,\"reasoning\":\"c\"},{\"rank\":4,\"score\":60,\"reasoning\":\"d\"}," +
+                "{\"rank\":5,\"score\":50,\"reasoning\":\"e\"}]";
+        when(claudeApiService.callClaudeApiWithVision(anyString(), anyString(), any())).thenReturn(json);
+
+        var result = photoRankingService.rankPhotos(fivePhotos);
+        assertThat(result.getRankedPhotos()).hasSize(5);
+    }
+
+    @Test
+    void rankPhotos_pngFilesAreAccepted() {
+        // making sure png isn't blocked
+        MockMultipartFile png1 = new MockMultipartFile("photos", "selfie.png", "image/png", new byte[200]);
+        MockMultipartFile png2 = new MockMultipartFile("photos", "outdoors.png", "image/png", new byte[200]);
+
+        String json = "[{\"rank\":1,\"score\":75,\"reasoning\":\"looks great\"},{\"rank\":2,\"score\":60,\"reasoning\":\"ok\"}]";
+        when(claudeApiService.callClaudeApiWithVision(anyString(), anyString(), any())).thenReturn(json);
+
+        var result = photoRankingService.rankPhotos(new MultipartFile[]{png1, png2});
+        assertThat(result.getRankedPhotos()).hasSize(2);
+    }
 }

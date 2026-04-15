@@ -126,4 +126,43 @@ class BioServiceImplTest {
                 "polite".equals(entity.getTonePreference())
         ));
     }
+
+    // ====== HANDWRITTEN TESTS ======
+
+    @Test
+    void rewriteBio_humorous_tone_works() {
+        // make sure humorous is accepted, it's one of the valid tones
+        String claudeResponse = "1. haha bio one.\n2. funny bio two.\n3. lol bio three.";
+        when(claudeApiService.callClaudeApi(anyString(), anyString())).thenReturn(claudeResponse);
+
+        var req = new BioRewriteRequest("I like to joke around and make people laugh.", "humorous");
+        var result = bioService.rewriteBio(req);
+
+        assertThat(result.getTone()).isEqualTo("humorous");
+        assertThat(result.getRewrittenBios()).hasSize(3);
+    }
+
+    @Test
+    void rewriteBio_warm_tone_works() {
+        // every valid tone should pass through without blowing up
+        String claudeResponse = "1. warm bio one.\n2. warm bio two.\n3. warm bio three.";
+        when(claudeApiService.callClaudeApi(anyString(), anyString())).thenReturn(claudeResponse);
+
+        var req = new BioRewriteRequest("I genuinely care about the people in my life.", "warm");
+        var result = bioService.rewriteBio(req);
+
+        assertThat(result.getTone()).isEqualTo("warm");
+    }
+
+    @Test
+    void rewriteBio_originalBioIsPreservedInResponse() {
+        // make sure the original is echoed back, not accidentally replaced
+        String originalBio = "I brew my own beer and love board games.";
+        when(claudeApiService.callClaudeApi(anyString(), anyString()))
+                .thenReturn("1. v1.\n2. v2.\n3. v3.");
+
+        var result = bioService.rewriteBio(new BioRewriteRequest(originalBio, "bold"));
+
+        assertThat(result.getOriginalBio()).isEqualTo(originalBio);
+    }
 }

@@ -168,4 +168,46 @@ class SavedItemControllerTest {
         r.setCreatedAt(LocalDateTime.now());
         return r;
     }
+
+    // ====== HANDWRITTEN TESTS ======
+
+    @Test
+    void deleteStarter_callsServiceWithCorrectIdAndUser() {
+        // mirrors the deleteBio test, making sure the starter endpoint does the same thing
+        UUID id = UUID.randomUUID();
+        doNothing().when(savedItemService).deleteItem(id, "user-123");
+
+        ResponseEntity<Void> response = controller.deleteStarter(id, auth);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        verify(savedItemService).deleteItem(id, "user-123");
+    }
+
+    @Test
+    void saveBio_responseBodyIsNotNull() {
+        // make sure the body is always present, not just 200 status
+        SaveContentRequest req = new SaveContentRequest();
+        req.setContent("Adventurer and coffee nerd");
+        when(savedItemService.saveBio("user-123", "Adventurer and coffee nerd"))
+                .thenReturn(savedItemResponse("Adventurer and coffee nerd"));
+
+        ResponseEntity<SavedItemResponse> response = controller.saveBio(req, auth);
+
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getContent()).isEqualTo("Adventurer and coffee nerd");
+    }
+
+    @Test
+    void getHistory_emptyHistory_returns200WithEmptyLists() {
+        // empty history shouldn't cause any errors, should just return empty lists
+        when(savedItemService.getHistory("user-123"))
+                .thenReturn(new HistoryResponse(List.of(), List.of()));
+
+        ResponseEntity<HistoryResponse> response = controller.getHistory(auth);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getSavedBios()).isEmpty();
+        assertThat(response.getBody().getSavedStarters()).isEmpty();
+    }
 }

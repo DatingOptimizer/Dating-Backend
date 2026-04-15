@@ -44,4 +44,28 @@ class ToneTypeTest {
     void fromString_withLeadingTrailingSpaces_parsesSuccessfully() {
         assertThat(ToneType.fromString("  bold  ")).isEqualTo(ToneType.BOLD);
     }
+
+    // ====== HANDWRITTEN TESTS ======
+
+    @Test
+    void allFiveToneValuesExist() {
+        // making sure nobody accidentally removed one of the tone options
+        var values = ToneType.values();
+        assertThat(values).hasSize(5);
+    }
+
+    @Test
+    void fromString_numericInput_throwsIllegalArgument() {
+        // numbers should not be valid tone values
+        assertThatThrownBy(() -> ToneType.fromString("42"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void eachToneHasNonBlankDescription() {
+        // every tone should have a description set (used in prompts)
+        for (ToneType t : ToneType.values()) {
+            assertThat(t.getDescription()).isNotBlank();
+        }
+    }
 }

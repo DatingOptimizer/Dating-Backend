@@ -140,4 +140,47 @@ class SavedItemServiceImplTest {
         item.setCreatedAt(LocalDateTime.now());
         return item;
     }
+
+    // ====== HANDWRITTEN TESTS ======
+
+    @Test
+    void saveBio_responseContainsCreatedAt() {
+        // basic sanity check, the timestamp should come back in the response
+        var id = UUID.randomUUID();
+        SavedItem saved = savedItem(id, "user-42", SavedItem.ItemType.BIO, "Love surfing and sunsets");
+        when(savedItemRepository.save(any())).thenReturn(saved);
+
+        var response = savedItemService.saveBio("user-42", "Love surfing and sunsets");
+
+        assertThat(response.getCreatedAt()).isNotNull();
+    }
+
+    @Test
+    void getHistory_whenUserHasMultipleBios_allAreReturned() {
+        // make sure multiple items all come back, not just the first one
+        var b1 = savedItem(UUID.randomUUID(), "user-5", SavedItem.ItemType.BIO, "Bio #1");
+        var b2 = savedItem(UUID.randomUUID(), "user-5", SavedItem.ItemType.BIO, "Bio #2");
+        var b3 = savedItem(UUID.randomUUID(), "user-5", SavedItem.ItemType.BIO, "Bio #3");
+
+        when(savedItemRepository.findByUserIdAndTypeOrderByCreatedAtDesc("user-5", SavedItem.ItemType.BIO))
+                .thenReturn(List.of(b1, b2, b3));
+        when(savedItemRepository.findByUserIdAndTypeOrderByCreatedAtDesc("user-5", SavedItem.ItemType.STARTER))
+                .thenReturn(List.of());
+
+        var history = savedItemService.getHistory("user-5");
+
+        assertThat(history.getSavedBios()).hasSize(3);
+    }
+
+    @Test
+    void saveStarter_responseIdMatchesSavedItemId() {
+        // make sure the id from the persisted entity is what gets returned
+        var expectedId = UUID.randomUUID();
+        SavedItem saved = savedItem(expectedId, "user-7", SavedItem.ItemType.STARTER, "Hey! I see you like hiking too");
+        when(savedItemRepository.save(any())).thenReturn(saved);
+
+        var response = savedItemService.saveStarter("user-7", "Hey! I see you like hiking too");
+
+        assertThat(response.getId()).isEqualTo(expectedId);
+    }
 }

@@ -90,4 +90,37 @@ class PromptBuilderTest {
 
         assertThat(prompt).contains(bio);
     }
+
+    // ====== HANDWRITTEN TESTS ======
+
+    @Test
+    void buildBioRewriteUserPrompt_withSpecialCharacters_doesntBreak() {
+        // bios can have apostrophes, emojis, etc.
+        String bio = "I'm a chef & I love \"authentic\" food 🍜";
+        String prompt = PromptBuilder.buildBioRewriteUserPrompt(bio);
+
+        assertThat(prompt).contains(bio);
+        assertThat(prompt).isNotEmpty();
+    }
+
+    @Test
+    void buildPhotoRankingUserPrompt_withMaxPhotos_containsCount() {
+        // sanity check with 5 (the max allowed) to make sure the count ends up in the prompt
+        String prompt = PromptBuilder.buildPhotoRankingUserPrompt(5);
+        assertThat(prompt).contains("5");
+    }
+
+    @Test
+    void buildConversationStarterUserPrompt_isNotEmpty() {
+        // the result should never be blank
+        String prompt = PromptBuilder.buildConversationStarterUserPrompt("Someone who loves dogs and hiking.");
+        assertThat(prompt).isNotBlank();
+    }
+
+    @Test
+    void buildBioRewriteSystemPrompt_boldTone_mentionsBold() {
+        // spot-checking that the bold tone description shows up in the prompt
+        String prompt = PromptBuilder.buildBioRewriteSystemPrompt(ToneType.BOLD);
+        assertThat(prompt).containsIgnoringCase("bold");
+    }
 }

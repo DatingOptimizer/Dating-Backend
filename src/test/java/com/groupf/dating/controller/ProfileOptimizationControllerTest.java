@@ -147,4 +147,51 @@ class ProfileOptimizationControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
+
+    // ====== HANDWRITTEN TESTS ======
+
+    @Test
+    void rewriteBio_nullTone_isStillAccepted() throws Exception {
+        // null tone should default to casual, not fail at the controller layer
+        BioRewriteRequest req = new BioRewriteRequest("I love hiking and I'm a software engineer.", null);
+        BioRewriteResponse resp = new BioRewriteResponse(req.getBio(),
+                List.of("v1", "v2", "v3"), "casual");
+        when(bioService.rewriteBio(any())).thenReturn(resp);
+
+        mockMvc.perform(post("/api/profile/rewrite-bio")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.tone").value("casual"));
+    }
+
+    @Test
+    void generateOpeners_validRequest_responseHasCorrectBioEchoed() throws Exception {
+        // checking the bio in the request is reflected back in the response
+        String bio = "Data scientist who loves hiking and guitar.";
+        ConversationStarterRequest req = new ConversationStarterRequest(bio, "casual");
+        ConversationStarterResponse resp = new ConversationStarterResponse(bio, List.of("opener1"), "casual");
+
+        when(conversationStarterService.generateStarters(any())).thenReturn(resp);
+
+        mockMvc.perform(post("/api/profile/generate-openers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.bio").value(bio));
+    }
+
+    @Test
+    void rewriteBio_claudeServerError_returns500() throws Exception {
+        // make sure 500 from claude propagates properly, not swallowed as 400
+        when(bioService.rewriteBio(any()))
+                .thenThrow(new ClaudeApiException(ErrorCode.CLAUDE_SERVER_ERROR));
+
+        BioRewriteRequest req = new BioRewriteRequest("I love hiking and I'm a software engineer.", "casual");
+
+        mockMvc.perform(post("/api/profile/rewrite-bio")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isInternalServerError());
+    }
 }
