@@ -3,12 +3,14 @@
 CS 5500 Group 4: Yihan Wang, Kaichen Qu, Xujing Hui
 
 **Live URLs:**
+
 - Frontend: https://dating-optimizer.netlify.app
 - Backend API: https://dating-optimizer-backend.onrender.com
 
 ## Overview
 
-Spring Boot REST API backend for the AI Dating Profile Optimizer application. This service uses Claude AI API to optimize dating profiles by rewriting bios, ranking photos, and generating conversation starters.
+Spring Boot REST API backend for the AI Dating Profile Optimizer application. This service uses Claude AI API to
+optimize dating profiles by rewriting bios, ranking photos, and generating conversation starters.
 
 ## Tech Stack
 
@@ -18,6 +20,7 @@ Spring Boot REST API backend for the AI Dating Profile Optimizer application. Th
 - **Auth**: Supabase Auth + Spring Security (JWT/ES256 via JWKS)
 - **AI**: Claude API (Anthropic)
 - **Build Tool**: Maven
+- **TestDoc**: [Testing Documentation.pdf](docs/Testing%20Documentation.pdf)
 
 ## Project Structure
 
@@ -54,16 +57,33 @@ src/main/java/com/groupf/dating/
 5. Create the `saved_items` table manually in **Supabase → SQL Editor**:
 
 ```sql
-CREATE TABLE IF NOT EXISTS saved_items (
-  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id    TEXT NOT NULL,
-  type       TEXT NOT NULL CHECK (type IN ('BIO', 'STARTER')),
-  content    TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW()
-);
+CREATE TABLE IF NOT EXISTS saved_items
+(
+    id
+    UUID
+    PRIMARY
+    KEY
+    DEFAULT
+    gen_random_uuid
+(
+),
+    user_id TEXT NOT NULL,
+    type TEXT NOT NULL CHECK
+(
+    type
+    IN
+(
+    'BIO',
+    'STARTER'
+)),
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW
+(
+)
+    );
 
 CREATE INDEX IF NOT EXISTS idx_saved_items_user_type
-  ON saved_items (user_id, type, created_at DESC);
+    ON saved_items (user_id, type, created_at DESC);
 ```
 
 ### 2. Get Claude API Key
@@ -117,11 +137,13 @@ The API will start on `http://localhost:8080`
 > All protected endpoints require: `Authorization: Bearer <supabase-jwt-token>`
 
 ### Health Check
+
 ```http
 GET /api/health
 ```
 
 Response:
+
 ```json
 {
   "status": "UP",
@@ -131,6 +153,7 @@ Response:
 ```
 
 ### Bio Rewriting
+
 ```http
 POST /api/profile/rewrite-bio
 Content-Type: application/json
@@ -144,6 +167,7 @@ Content-Type: application/json
 Valid tone values: `casual`, `bold`, `polite`, `humorous`, `warm`
 
 Response:
+
 ```json
 {
   "originalBio": "I like traveling and pizza. Looking for someone fun.",
@@ -157,6 +181,7 @@ Response:
 ```
 
 ### Generate Conversation Starters
+
 ```http
 POST /api/profile/generate-openers
 Content-Type: application/json
@@ -170,6 +195,7 @@ Content-Type: application/json
 Valid tone values: `casual`, `bold`, `polite`, `humorous`, `warm`
 
 Response:
+
 ```json
 {
   "bio": "I love hiking and photography",
@@ -183,6 +209,7 @@ Response:
 ```
 
 ### Photo Ranking
+
 ```http
 POST /api/profile/rank-photos
 Content-Type: multipart/form-data
@@ -195,6 +222,7 @@ photos: <file1>, <file2>, ...
 ```http
 GET /api/profile/history
 ```
+
 Returns all saved bios and starters for the authenticated user.
 
 ```http
@@ -220,13 +248,22 @@ DELETE /api/profile/history/starter/{id}
 ```
 
 History response shape:
+
 ```json
 {
   "savedBios": [
-    { "id": "uuid", "content": "...", "createdAt": "2026-03-18T10:00:00" }
+    {
+      "id": "uuid",
+      "content": "...",
+      "createdAt": "2026-03-18T10:00:00"
+    }
   ],
   "savedStarters": [
-    { "id": "uuid", "content": "...", "createdAt": "2026-03-18T10:01:00" }
+    {
+      "id": "uuid",
+      "content": "...",
+      "createdAt": "2026-03-18T10:01:00"
+    }
   ]
 }
 ```
@@ -236,6 +273,7 @@ History response shape:
 ### Testing Endpoints
 
 **Using curl:**
+
 ```bash
 # Health check
 curl http://localhost:8080/api/health
@@ -247,6 +285,7 @@ curl -X POST http://localhost:8080/api/profile/rewrite-bio \
 ```
 
 **Using Postman:**
+
 1. Import the API endpoints
 2. Set `Content-Type: application/json`
 3. Test each endpoint
@@ -254,16 +293,19 @@ curl -X POST http://localhost:8080/api/profile/rewrite-bio \
 ### Running Tests
 
 Run all tests:
+
 ```bash
 ./mvnw test
 ```
 
 Run a single test class:
+
 ```bash
 ./mvnw test -Dtest=BioServiceImplTest
 ```
 
 Run tests matching a pattern:
+
 ```bash
 ./mvnw test -Dtest="*ServiceImpl*"
 ```
@@ -271,21 +313,27 @@ Run tests matching a pattern:
 ### Test Coverage
 
 Generate a coverage report (runs tests + produces HTML report):
+
 ```bash
 ./mvnw test
 ```
 
 Then open the report in your browser:
+
 ```bash
 open target/site/jacoco/index.html
 ```
 
-The report shows line and branch coverage for every class. It is generated at `target/site/jacoco/index.html` after each `./mvnw test` run.
+The report shows line and branch coverage for every class. It is generated at `target/site/jacoco/index.html` after each
+`./mvnw test` run.
 
-To fail the build if coverage drops below a threshold, the JaCoCo plugin in `pom.xml` can be configured with a `check` goal — useful for CI enforcement.
+To fail the build if coverage drops below a threshold, the JaCoCo plugin in `pom.xml` can be configured with a `check`
+goal — useful for CI enforcement.
 
 ### Hot Reload
+
 The application supports hot reload during development. Just rebuild:
+
 ```bash
 ./mvnw compile
 ```
@@ -296,51 +344,56 @@ The application supports hot reload during development. Just rebuild:
 
 Auto-created by Hibernate on first startup.
 
-| Column | Type | Description |
-|---|---|---|
-| `id` | UUID (PK) | Auto-generated |
-| `user_id` | VARCHAR | Supabase auth user UUID |
-| `original_bio` | TEXT | User's original bio |
-| `tone_preference` | VARCHAR | casual / bold / polite / humorous / warm |
-| `rewritten_bios` | TEXT | JSON array of rewritten bios |
-| `conversation_starters` | TEXT | JSON array of starters |
-| `ranked_photos` | TEXT | JSON array of photo rankings |
-| `created_at` | TIMESTAMP | Record creation time |
+| Column                  | Type      | Description                              |
+|-------------------------|-----------|------------------------------------------|
+| `id`                    | UUID (PK) | Auto-generated                           |
+| `user_id`               | VARCHAR   | Supabase auth user UUID                  |
+| `original_bio`          | TEXT      | User's original bio                      |
+| `tone_preference`       | VARCHAR   | casual / bold / polite / humorous / warm |
+| `rewritten_bios`        | TEXT      | JSON array of rewritten bios             |
+| `conversation_starters` | TEXT      | JSON array of starters                   |
+| `ranked_photos`         | TEXT      | JSON array of photo rankings             |
+| `created_at`            | TIMESTAMP | Record creation time                     |
 
 ### Table: `saved_items`
 
 Must be created manually in Supabase SQL Editor (see Setup step 5 above).
 
-| Column | Type | Description |
-|---|---|---|
-| `id` | UUID (PK) | Auto-generated |
-| `user_id` | TEXT | Supabase auth user UUID |
-| `type` | TEXT | `BIO` or `STARTER` |
-| `content` | TEXT | Saved text content |
-| `created_at` | TIMESTAMP | Record creation time |
+| Column       | Type      | Description             |
+|--------------|-----------|-------------------------|
+| `id`         | UUID (PK) | Auto-generated          |
+| `user_id`    | TEXT      | Supabase auth user UUID |
+| `type`       | TEXT      | `BIO` or `STARTER`      |
+| `content`    | TEXT      | Saved text content      |
+| `created_at` | TIMESTAMP | Record creation time    |
 
-Registered users are managed automatically by Supabase in the built-in `auth.users` table. View them in **Supabase Dashboard → Authentication → Users**.
+Registered users are managed automatically by Supabase in the built-in `auth.users` table. View them in **Supabase
+Dashboard → Authentication → Users**.
 
 ## Completed Milestones
 
 ### Week 1-2: Project Setup
+
 - [x] Spring Boot configuration with Java 21
 - [x] Supabase PostgreSQL connection
 - [x] REST API structure with CORS for React frontend
 
 ### Week 3-4: Core Features
+
 - [x] Claude API integration service
 - [x] Bio rewriting with multiple tones (casual, bold, polite, humorous, warm)
 - [x] Conversation starter generation
 - [x] Save/history endpoints for bios and starters
 
 ### Week 5-6: Photo Ranking & Integration
+
 - [x] Photo ranking with Claude Vision API
 - [x] File upload handling
 - [x] React frontend integration
 - [x] Error handling, validation, and retry mechanism
 
 ### Week 7-8: Testing & Deployment
+
 - [x] Unit and integration tests (JaCoCo coverage)
 - [x] Docker containerization
 - [x] Deployed to Render (backend) and Netlify (frontend)
@@ -368,23 +421,23 @@ curl http://localhost:8080/api/health
 2. Connect your GitHub repo
 3. Configure:
 
-| Field | Value |
-|---|---|
-| Language | Docker |
-| Branch | `main` |
-| Instance Type | Free |
+| Field         | Value  |
+|---------------|--------|
+| Language      | Docker |
+| Branch        | `main` |
+| Instance Type | Free   |
 
 4. Add environment variables under **Environment**:
 
-| Key | Value |
-|---|---|
-| `SUPABASE_DB_JDBC_URL` | your jdbc url |
-| `SUPABASE_DB_USERNAME` | your username |
-| `SUPABASE_DB_PASSWORD` | your password |
-| `SUPABASE_URL` | your supabase project url |
-| `SUPABASE_JWT_SECRET` | your jwt secret |
-| `CLAUDE_API_KEY` | your claude api key |
-| `ALLOWED_ORIGINS` | `https://dating-optimizer.netlify.app` |
+| Key                    | Value                                  |
+|------------------------|----------------------------------------|
+| `SUPABASE_DB_JDBC_URL` | your jdbc url                          |
+| `SUPABASE_DB_USERNAME` | your username                          |
+| `SUPABASE_DB_PASSWORD` | your password                          |
+| `SUPABASE_URL`         | your supabase project url              |
+| `SUPABASE_JWT_SECRET`  | your jwt secret                        |
+| `CLAUDE_API_KEY`       | your claude api key                    |
+| `ALLOWED_ORIGINS`      | `https://dating-optimizer.netlify.app` |
 
 5. Click **Create Web Service** — Render auto-deploys on every push to `main`
 
@@ -395,12 +448,14 @@ The deployed backend is live at: https://dating-optimizer-backend.onrender.com
 ## Troubleshooting
 
 ### Supabase Connection Issues
+
 - Ensure `SUPABASE_DB_JDBC_URL` uses JDBC format: `jdbc:postgresql://...` not `postgresql://...`
 - Ensure `?sslmode=require` is appended to the JDBC URL
 - Check your DB password doesn't have unescaped special characters
 - Verify the Supabase project is not paused (free tier pauses after inactivity)
 
 ### Port Already in Use
+
 ```bash
 # Find process on port 8080
 lsof -i :8080
@@ -413,6 +468,7 @@ server.port=8081
 ```
 
 ### Java Version Issues
+
 ```bash
 # Check Java version
 java -version
